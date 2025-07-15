@@ -30,7 +30,7 @@ const createTweet = async (req, res) => {
 const getAllTweets = async (req, res) => {
   try {
     const tweets = await Tweet.find()
-      .populate("userId", "name, username avatar")
+      .populate("userId", "name username avatar")
       .sort({ createdAt: -1 });
 
     return res.status(200).json({
@@ -50,7 +50,7 @@ const getUserTweets = async (req, res) => {
     const { userId } = req.params;
 
     const tweets = await Tweet.find({ userId })
-      .populate("userId", "name, username avatar")
+      .populate("userId", "name username avatar")
       .sort({ createdAt: -1 });
 
     return res.status(200).json({

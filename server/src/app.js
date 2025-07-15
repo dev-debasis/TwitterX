@@ -21,10 +21,5 @@ app.use("/uploads", express.static("uploads"))
 
 app.use("/api/v1/users", userRouter)
 app.use("/api/v1/tweets", tweetRouter)
-app.use("*", (req, res) => {
-    res.status(404).json({
-        message: "Route not found"
-    })
-})
 
 export { app }

@@ -71,7 +71,7 @@ const loginUser = async (req, res) => {
     }
 
     const user = await User.findOne({
-      $or: [{ email: email.toLowerCase() }, { username: username.toLowerCase }],
+      $or: [{ email: email?.toLowerCase() }, { username: username?.toLowerCase }],
     });
 
     if (!user) {
@@ -101,9 +101,15 @@ const loginUser = async (req, res) => {
     });
   }
 };
-
+  
 const profile = async (req, res) => {
   try {
+    const userId = req.user._id
+    if(!userId){
+      return res.status(401).json({
+        message: "Unauthorized access"
+      })
+    }
     const user = await User.findById(req.user._id).select("-password");
     if (!user) {
       return res.status(404).json({
@@ -248,6 +254,7 @@ const updateCoverImage = async (req, res) => {
     ).select("-password");
     return res.status(200).json({
       message: "Cover Image updated successfully.",
+      user
     });
   } catch (error) {
     console.log("Server error during cover image update");
@@ -260,9 +267,20 @@ const updateCoverImage = async (req, res) => {
 const changePassword = async (req, res) => {
   try {
     const { oldPassword, newPassword, confirmPassword } = req.body;
+    
+    if(![oldPassword, newPassword, confirmPassword].every((field) => field?.trim())){
+      return res.status(400).json({
+        message: "Fields can't be empty."
+      })
+    }
     if (newPassword !== confirmPassword) {
       return res.status(400).json({
         message: "Your new password and confirm are not same"
+      })
+    }
+    if(oldPassword === newPassword){
+      return res.status(400).json({
+        message: "Old Password and new password can't be same."
       })
     }
     const user = await User.findById(req.user._id);

@@ -6,7 +6,13 @@ const toggleFollow = async (req, res) => {
     const { id: targetUserId } = req.params;
     const loggedInUserId = req.user._id;
 
-    if (loggedInUserId === targetUserId) {
+    const targetUser = await User.findById(targetUserId);
+
+    if (!targetUser) return res.status(404).json({ 
+      message: "Targeted user not found." 
+    });
+
+    if (loggedInUserId.toString() === targetUserId.toString()) {
       return res.status(400).json({ message: "You can't follow yourself." });
     }
 

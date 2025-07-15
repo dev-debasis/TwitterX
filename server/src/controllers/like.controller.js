@@ -6,6 +6,14 @@ const toggleLike = async (req, res) => {
     const { id: tweetId } = req.params;
     const userId = req.user._id;
 
+    const tweet = await Tweet.findById(tweetId)
+
+    if(!tweet){
+      return res.status(404).json({
+        message: "No tweet found."
+      })
+    }
+
     const existingLike = await Like.findOne({ userId, tweetId });
 
     if (existingLike) {

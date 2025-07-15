@@ -6,6 +6,13 @@ const addReply = async (req, res) => {
     const { id: tweetId } = req.params;
     const { content } = req.body;
 
+    const tweet = await Tweet.findById(tweetId)
+    if(!tweet){
+      return res.status(404).json({
+        message: "No tweet found."
+      })
+    }
+
     if (!content?.trim()) {
       return res.status(400).json({ 
         message: "Reply content is required." 
@@ -36,6 +43,13 @@ const getReplies = async (req, res) => {
   try {
     const { id: tweetId } = req.params;
 
+    const tweet = await Tweet.findById(tweetId)
+    if(!tweet){
+      return res.status(404).json({
+        message: "No tweet found."
+      })
+    }
+    
     const replies = await Reply.find({ tweetId })
       .populate("userId", "name username avatar")
       .sort({ createdAt: -1 });

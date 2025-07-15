@@ -1,9 +1,10 @@
 import { verifyToken } from "../utils/jwt.js"
 import { User } from "../models/user.model.js"
+import jwt from "jsonwebtoken"
 
 const verifyJWT = async (req, res, next) => {
     try {
-        const authHeader = req.header("Authorization")
+        const authHeader = await req.header("Authorization")
         if(!authHeader){
             return res.status(401).json({
                 message: "Authorization is missing"
@@ -16,7 +17,7 @@ const verifyJWT = async (req, res, next) => {
             })
         }
 
-        const token = authHeader.split(" ")[1]
+        const token = await authHeader.split(" ")[1]
         if(!token){
             return res.status(401).json({
                 message: "Token not provided"
@@ -30,11 +31,11 @@ const verifyJWT = async (req, res, next) => {
             })
         }
 
-        const user = await User.findById(decodedToken.id)
+        const user = await User.findById(decodedToken.id).select("-password")
 
         if(!user){
             return res.status(401).json({
-                message: "User not found"
+                message: "Invalid access token"
             })
         }
 
