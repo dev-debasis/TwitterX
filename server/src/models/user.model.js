@@ -34,6 +34,18 @@ const userSchema = new Schema({
         type: String,
         default: ""
     },
+    location: {
+        type: String,
+        default: "India"
+    },
+    profession: {
+        type: String,
+        default: ""
+    },
+    notificationsEnabled: {
+        type: Boolean,
+        default: true
+    },
     followersCount: {
         type: Number,
         default: 0

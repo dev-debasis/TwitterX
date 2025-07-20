@@ -1,4 +1,5 @@
 import { User } from "../models/user.model.js";
+import { Tweet } from "../models/tweet.model.js";
 import { createToken } from "../utils/jwt.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
@@ -71,7 +72,10 @@ const loginUser = async (req, res) => {
     }
 
     const user = await User.findOne({
-      $or: [{ email: email?.toLowerCase() }, { username: username?.toLowerCase }],
+      $or: [
+        { email: email?.toLowerCase() },
+        { username: username?.toLowerCase },
+      ],
     });
 
     if (!user) {
@@ -101,14 +105,14 @@ const loginUser = async (req, res) => {
     });
   }
 };
-  
+
 const profile = async (req, res) => {
   try {
-    const userId = req.user._id
-    if(!userId){
+    const userId = req.user._id;
+    if (!userId) {
       return res.status(401).json({
-        message: "Unauthorized access"
-      })
+        message: "Unauthorized access",
+      });
     }
     const user = await User.findById(req.user._id).select("-password");
     if (!user) {
@@ -138,24 +142,24 @@ const updateProfile = async (req, res) => {
       });
     }
 
-    const existingEmailUser = await User.findOne({ 
-        email: email.toLowerCase(),
-        _id: { $ne: req.user._id }
-    })
-    const existingUsernameUser = await User.findOne({ 
-        username: username.toLowerCase(),
-        _id: { $ne: req.user._id }
-    })
+    const existingEmailUser = await User.findOne({
+      email: email.toLowerCase(),
+      _id: { $ne: req.user._id },
+    });
+    const existingUsernameUser = await User.findOne({
+      username: username.toLowerCase(),
+      _id: { $ne: req.user._id },
+    });
 
-    if(existingEmailUser){
-        return res.status(409).json({
-            message: "Email already in use by another user."
-        })
+    if (existingEmailUser) {
+      return res.status(409).json({
+        message: "Email already in use by another user.",
+      });
     }
-    if(existingUsernameUser){
-        return res.status(409).json({
-            message: "username already in use by another user."
-        })
+    if (existingUsernameUser) {
+      return res.status(409).json({
+        message: "username already in use by another user.",
+      });
     }
 
     const user = await User.findByIdAndUpdate(
@@ -254,7 +258,7 @@ const updateCoverImage = async (req, res) => {
     ).select("-password");
     return res.status(200).json({
       message: "Cover Image updated successfully.",
-      user
+      user,
     });
   } catch (error) {
     console.log("Server error during cover image update");
@@ -267,41 +271,142 @@ const updateCoverImage = async (req, res) => {
 const changePassword = async (req, res) => {
   try {
     const { oldPassword, newPassword, confirmPassword } = req.body;
-    
-    if(![oldPassword, newPassword, confirmPassword].every((field) => field?.trim())){
+
+    if (
+      ![oldPassword, newPassword, confirmPassword].every((field) =>
+        field?.trim()
+      )
+    ) {
       return res.status(400).json({
-        message: "Fields can't be empty."
-      })
+        message: "Fields can't be empty.",
+      });
     }
     if (newPassword !== confirmPassword) {
       return res.status(400).json({
-        message: "Your new password and confirm are not same"
-      })
+        message: "Your new password and confirm are not same",
+      });
     }
-    if(oldPassword === newPassword){
+    if (oldPassword === newPassword) {
       return res.status(400).json({
-        message: "Old Password and new password can't be same."
-      })
+        message: "Old Password and new password can't be same.",
+      });
     }
     const user = await User.findById(req.user._id);
     const isPasswordValid = await user.isPasswordCorrect(oldPassword);
 
     if (!isPasswordValid) {
       return res.status(400).json({
-        message: "Invalid Old password"
-      })
+        message: "Invalid Old password",
+      });
     }
     user.password = newPassword;
     await user.save({ validateBeforeSave: false });
 
     return res.status(200).json({
-        message: "Password Updated Successfully"
-    })
+      message: "Password Updated Successfully",
+    });
   } catch (error) {
-    console.error("Server error during password change")
+    console.error("Server error during password change");
     return res.status(500).json({
-        message: error.message
+      message: error.message,
+    });
+  }
+};
+
+const searchUser = async (req, res) => {
+  try {
+    const { searchQuery } = req.query;
+
+    if (!searchQuery || searchQuery.trim().length === 0) {
+      return res.status(400).json({
+        message: "Search query is required",
+      });
+    }
+
+    const searchRegex = new RegExp(searchQuery.trim(), "i");
+
+    const users = await User.find({
+      $or: [
+        { name: { $regex: searchRegex } },
+        { username: { $regex: searchRegex } },
+      ],
     })
+      .select("name username avatar")
+      .limit(10);
+
+    return res.status(200).json({
+      users,
+    });
+  } catch (error) {
+    console.error("Search error:", error);
+    res.status(500).json({ message: "Error searching users" });
+  }
+};
+
+const getUserProfile = async (req, res) => {
+  try {
+    const { username } = req.params;
+
+    const user = await User.findOne({ username }).select("-password");
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    const tweets = await Tweet.find({ userId: user._id })
+      .populate("userId", "name username avatar")
+      .sort({ createdAt: -1 })
+      .limit(50);
+
+    return res.status(200).json({
+      user: {
+        _id: user._id,
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        avatar: user.avatar,
+        coverImage: user.coverImage,
+        bio: user.bio,
+        location: user.location,
+        website: user.website,
+        createdAt: user.createdAt,
+        followersCount: user.followersCount || 0,
+        followingsCount: user.followingsCount || 0,
+      },
+      tweets,
+      isOwnProfile: false,
+    });
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    res.status(500).json({
+      message: "Error fetching user profile",
+    });
+  }
+};
+
+const getNotification = async (req, res) => {
+  try {
+    const { notificationsEnabled } = req.body;
+    if (typeof notificationsEnabled !== "boolean") {
+      return res.status(400).json({ 
+        message: "notificationsEnabled must be boolean" 
+      });
+    }
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { notificationsEnabled },
+      { new: true }
+    ).select("notificationsEnabled");
+    return res.status(200).json({ 
+      notificationsEnabled: user.notificationsEnabled || true 
+    });
+  } catch (err) {
+    console.error("Server error in the notification: ",error)
+    return res.status(500).json({ 
+      message: error.message
+    });
   }
 };
 
@@ -313,4 +418,7 @@ export {
   updateAvatar,
   updateCoverImage,
   changePassword,
+  searchUser,
+  getUserProfile,
+  getNotification,
 };
