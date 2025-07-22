@@ -53,6 +53,10 @@ const userSchema = new Schema({
     followingsCount: {
         type: Number,
         default: 0
+    },
+    googleId: {
+        type: String,
+        unique: true,
     }
 },
 {

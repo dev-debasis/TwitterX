@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import GoogleLogin from '../components/auth/GoogleLogin.jsx'
 
 function Signup() {
   const [formData, setFormData] = useState({
@@ -119,6 +120,17 @@ function Signup() {
             </svg>
           </div>
           <h1 className="text-white text-2xl font-bold mb-2">Create an account</h1>
+        </div>
+
+        <GoogleLogin />
+
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-600"></div>
+          </div>
+          <div className="relative flex justify-center">
+            <span className="bg-black px-4 text-gray-400 text-sm">or</span>
+          </div>
         </div>
 
         {/* Form */}
