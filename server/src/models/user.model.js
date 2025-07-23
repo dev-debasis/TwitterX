@@ -57,6 +57,37 @@ const userSchema = new Schema({
     googleId: {
         type: String,
         unique: true,
+    },
+    language: {
+        type: String,
+        default: "en"
+    },
+    phoneNumber: {
+        type: String,
+        default: ""
+    },
+    phoneVerified: {
+        type: Boolean,
+        default: false
+    },
+    emailVerified: {
+        type: Boolean,
+        default: false
+    },
+    otpCode: {
+        type: String
+    },
+    otpExpiry: {
+        type: Date
+    },
+    otpType: {
+        type: String,
+        enum: ["email", "sms", null],
+        default: null
+    },
+    pendingLanguage: {
+        type: String,
+        default: null
     }
 },
 {
