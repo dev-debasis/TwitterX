@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 function Settings() {
+  const { t } = useTranslation();
   const [user, setUser] = useState(null);
   const [activeSection, setActiveSection] = useState("account");
   const [passwordData, setPasswordData] = useState({
@@ -111,15 +113,12 @@ function Settings() {
 
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
-    // Profile update functionality can be added here
-    // Optionally send profileData to backend
+    
   };
 
-  // Fixed notification toggle function with optimistic updates
   const handleNotificationToggle = async () => {
     const newValue = !notificationsEnabled;
     
-    // Optimistic update - update UI immediately
     setNotificationsEnabled(newValue);
     setNotifLoading(true);
     
@@ -141,25 +140,21 @@ function Settings() {
         const data = await response.json();
         console.log("API Response:", data);
         
-        // Confirm the update with server response if available
         if (data.notificationsEnabled !== undefined) {
           setNotificationsEnabled(data.notificationsEnabled);
         }
         
-        // Update local user data
         const userData = JSON.parse(localStorage.getItem("user") || "{}");
         userData.notificationsEnabled = data.notificationsEnabled !== undefined ? data.notificationsEnabled : newValue;
         localStorage.setItem("user", JSON.stringify(userData));
         
         console.log("Notification settings successfully updated to:", newValue);
       } else {
-        // Revert optimistic update on failure
         setNotificationsEnabled(!newValue);
         const data = await response.json();
         console.error("Failed to update notification settings:", data);
       }
     } catch (error) {
-      // Revert optimistic update on error
       setNotificationsEnabled(!newValue);
       console.error("Error updating notification settings:", error);
     } finally {
@@ -266,7 +261,7 @@ function Settings() {
               </svg>
             </button>
             <div>
-              <h1 className="text-xl font-bold">Settings</h1>
+              <h1 className="text-xl font-bold">{t("settings")}</h1>
               <p className="text-gray-500 text-sm">
                 Manage your account settings and preferences
               </p>
@@ -278,7 +273,7 @@ function Settings() {
           {/* Settings Navigation */}
           <div className="w-80 border-r border-gray-800 h-screen overflow-y-auto">
             <div className="p-4">
-              <h2 className="text-lg font-bold mb-4">Settings</h2>
+              <h2 className="text-lg font-bold mb-4">{t("settings")}</h2>
               <div className="space-y-1">
                 {settingsOptions.map((option) => (
                   <button
@@ -303,22 +298,22 @@ function Settings() {
               <div className="space-y-6">
                 <div>
                   <h2 className="text-2xl font-bold mb-2">
-                    Account Information
+                    {t("account_information")}
                   </h2>
                   <p className="text-gray-400 mb-6">
-                    Manage your account details and security settings
+                    {t("account_info_description")}
                   </p>
                 </div>
 
                 {/* Profile Information */}
                 <div className="bg-gray-900 rounded-xl p-6">
                   <h3 className="text-lg font-bold mb-4">
-                    Profile Information
+                    {t("profile_information")}
                   </h3>
                   <form onSubmit={handleProfileUpdate} className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium mb-2">
-                        Display Name
+                        {t("display_name")}
                       </label>
                       <input
                         type="text"
@@ -335,7 +330,7 @@ function Settings() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-2">
-                        Username
+                        {t("username")}
                       </label>
                       <input
                         type="text"
@@ -352,7 +347,7 @@ function Settings() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-2">
-                        Bio
+                        {t("bio")}
                       </label>
                       <textarea
                         value={profileData.bio}
@@ -369,7 +364,7 @@ function Settings() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-2">
-                        Location
+                        {t("location")}
                       </label>
                       <input
                         type="text"
@@ -386,7 +381,7 @@ function Settings() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-2">
-                        Website
+                        {t("website")}
                       </label>
                       <input
                         type="url"
@@ -405,7 +400,7 @@ function Settings() {
                       type="submit"
                       className="bg-blue-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-600 transition-colors"
                     >
-                      Save Changes
+                      {t("save_changes")}
                     </button>
                   </form>
                 </div>
@@ -413,28 +408,28 @@ function Settings() {
                 {/* Danger Zone */}
                 <div className="bg-red-900/20 border border-red-800 rounded-xl p-6">
                   <h3 className="text-lg font-bold mb-4 text-red-400">
-                    Danger Zone
+                    {t("danger_zone")}
                   </h3>
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="font-medium">Logout</h4>
+                        <h4 className="font-medium">{t("logout")}</h4>
                         <p className="text-gray-400 text-sm">
-                          Sign out of your account
+                          {t("sign_out_description")}
                         </p>
                       </div>
                       <button
                         onClick={handleLogout}
                         className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
                       >
-                        Logout
+                        {t("logout")}
                       </button>
                     </div>
                     <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="font-medium">Delete Account</h4>
+                        <h4 className="font-medium">{t("delete_account")}</h4>
                         <p className="text-gray-400 text-sm">
-                          Permanently delete your account and all data
+                          {t("delete_account_description")}
                         </p>
                       </div>
                       <button
@@ -443,7 +438,7 @@ function Settings() {
                         }
                         className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
                       >
-                        Delete Account
+                        {t("delete_account")}
                       </button>
                     </div>
                   </div>
@@ -455,20 +450,20 @@ function Settings() {
               <div className="space-y-6">
                 <div>
                   <h2 className="text-2xl font-bold mb-2">
-                    Privacy and Safety
+                    {t("privacy_and_safety")}
                   </h2>
                   <p className="text-gray-400 mb-6">
-                    Control who can see your content and interact with you
+                    {t("privacy_description")}
                   </p>
                 </div>
 
                 {/* Change Password */}
                 <div className="bg-gray-900 rounded-xl p-6">
-                  <h3 className="text-lg font-bold mb-4">Change Password</h3>
+                  <h3 className="text-lg font-bold mb-4">{t("change_password")}</h3>
                   <form onSubmit={handlePasswordChange} className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium mb-2">
-                        Current Password
+                        {t("current_password")}
                       </label>
                       <input
                         type="password"
@@ -485,7 +480,7 @@ function Settings() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-2">
-                        New Password
+                        {t("new_password")}
                       </label>
                       <input
                         type="password"
@@ -502,7 +497,7 @@ function Settings() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-2">
-                        Confirm New Password
+                        {t("confirm_new_password")}
                       </label>
                       <input
                         type="password"
@@ -543,16 +538,16 @@ function Settings() {
             {activeSection === "notifications" && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-2xl font-bold mb-2">Notifications</h2>
+                  <h2 className="text-2xl font-bold mb-2">{t("notifications")}</h2>
                   <p className="text-gray-400 mb-6">
-                    Choose what you get notified about
+                    {t("notifications_description")}
                   </p>
                 </div>
 
                 <div className="bg-gray-900 rounded-xl p-6 mb-6">
-                  <h3 className="text-lg font-bold mb-4">Browser Notifications</h3>
+                  <h3 className="text-lg font-bold mb-4">{t("browser_notifications")}</h3>
                   <div className="flex items-center justify-between">
-                    <span className="text-white">Enable browser notifications</span>
+                    <span className="text-white">{t("enable_browser_notifications")}</span>
                     <div className="flex items-center">
                       <button
                         type="button"

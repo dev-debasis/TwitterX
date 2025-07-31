@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Leftbar from "../components/ui/Leftbar.jsx";
+import { useTranslation } from "react-i18next";
 
 const containsKeywords = (content) => /cricket|science/i.test(content);
 
 function Home() {
+  const { t, i18n } = useTranslation();
   const [tweets, setTweets] = useState([]);
   const [user, setUser] = useState(null);
   const [newTweet, setNewTweet] = useState("");
@@ -19,6 +21,7 @@ function Home() {
   const [tweetReplies, setTweetReplies] = useState({});
   const [loadingReplies, setLoadingReplies] = useState({});
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -42,7 +45,6 @@ function Home() {
     fetchTweets();
   }, [navigate]);
 
-  // Request browser notification permission on mount if enabled
   useEffect(() => {
     if (notificationsEnabled && "Notification" in window) {
       if (Notification.permission === "default") {
@@ -51,7 +53,6 @@ function Home() {
     }
   }, [notificationsEnabled]);
 
-  // Fetch all tweets
   const fetchTweets = async () => {
     try {
       const response = await fetch("http://localhost:8000/api/v1/tweets");
@@ -66,7 +67,6 @@ function Home() {
     }
   };
 
-  // Fetch replies for a tweet
   const fetchReplies = async (tweetId) => {
     if (tweetReplies[tweetId]) return;
     setLoadingReplies((prev) => ({ ...prev, [tweetId]: true }));
@@ -94,7 +94,6 @@ function Home() {
     }
   };
 
-  // Handle reply button click
   const handleReplyClick = (tweetId) => {
     if (replyingTo === tweetId) {
       setReplyingTo(null);
@@ -104,7 +103,6 @@ function Home() {
     }
   };
 
-  // Handle posting a new tweet
   const handleTweetSubmit = async (e) => {
     e.preventDefault();
     if (!newTweet.trim()) return;
@@ -122,7 +120,6 @@ function Home() {
       });
 
       if (response.ok) {
-        // Show notification for your own tweet if it matches keywords
         if (
           Notification.permission === "granted" &&
           containsKeywords(newTweet)
@@ -142,7 +139,6 @@ function Home() {
     }
   };
 
-  // Handle liking a tweet
   const handleLike = async (tweetId) => {
     try {
       const token = localStorage.getItem("token");
@@ -163,7 +159,6 @@ function Home() {
     }
   };
 
-  // Handle replying to a tweet
   const handleReply = async (tweetId) => {
     if (!replyContent.trim()) return;
     try {
@@ -190,7 +185,6 @@ function Home() {
     }
   };
 
-  // Format tweet time
   const formatTime = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -201,14 +195,15 @@ function Home() {
     return `${Math.floor(diffInMinutes / 1440)}d`;
   };
 
-  // Search users
   const performSearch = async (query) => {
     if (!query.trim()) return;
     setIsSearching(true);
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:8000/api/v1/users/search?searchQuery=${encodeURIComponent(query)}`,
+        `http://localhost:8000/api/v1/users/search?searchQuery=${encodeURIComponent(
+          query
+        )}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -272,10 +267,10 @@ function Home() {
         <div className="sticky top-0 bg-black/80 backdrop-blur-md border-b border-gray-800 z-50">
           <div className="flex">
             <div className="flex-1 text-center py-4 border-b-2 border-blue-500">
-              <span className="font-bold">For you</span>
+              <span className="font-bold">{t("for_you")}</span>
             </div>
             <div className="flex-1 text-center py-4 text-gray-500 hover:bg-gray-900 cursor-pointer">
-              <span>Following</span>
+              <span>{t("following")}</span>
             </div>
           </div>
         </div>
@@ -301,28 +296,57 @@ function Home() {
                 <textarea
                   value={newTweet}
                   onChange={(e) => setNewTweet(e.target.value)}
-                  placeholder="What is happening?!"
+                  placeholder={t("what_is_happening")}
                   className="w-full bg-transparent text-xl placeholder-gray-500 resize-none outline-none"
                   rows="3"
                 />
                 <div className="flex items-center justify-between mt-3">
                   <div className="flex items-center space-x-4 text-blue-400">
                     {/* Tweet action buttons (icons only, no handlers) */}
-                    <button type="button" className="hover:bg-blue-900/20 p-2 rounded-full">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    <button
+                      type="button"
+                      className="hover:bg-blue-900/20 p-2 rounded-full"
+                    >
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
                           d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                         />
                       </svg>
                     </button>
-                    <button type="button" className="hover:bg-blue-900/20 p-2 rounded-full">
-                      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 33 32">
+                    <button
+                      type="button"
+                      className="hover:bg-blue-900/20 p-2 rounded-full"
+                    >
+                      <svg
+                        className="w-6 h-6"
+                        fill="currentColor"
+                        viewBox="0 0 33 32"
+                      >
                         <path d="M12.745 20.54l10.97-8.19c.539-.4 1.307-.244 1.564.38 1.349 3.288.746 7.241-1.938 9.955-2.683 2.714-6.417 3.31-9.83 1.954l-3.728 1.745c5.347 3.697 11.84 2.782 15.898-1.324 3.219-3.255 4.216-7.692 3.284-11.693l.008.009c-1.351-5.878.332-8.227 3.782-13.031L33 0l-4.54 4.59v-.014L12.743 20.544m-2.263 1.987c-3.837-3.707-3.175-9.446.1-12.755 2.42-2.449 6.388-3.448 9.852-1.979l3.72-1.737c-.67-.49-1.53-1.017-2.515-1.387-4.455-1.854-9.789-.931-13.41 2.728-3.483 3.523-4.579 8.94-2.697 13.561 1.405 3.454-.899 5.898-3.22 8.364C1.49 30.2.666 31.074 0 32l10.478-9.466" />
                       </svg>
                     </button>
-                    <button type="button" className="hover:bg-blue-900/20 p-2 rounded-full">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    <button
+                      type="button"
+                      className="hover:bg-blue-900/20 p-2 rounded-full"
+                    >
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
                           d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M12 5a9 9 0 110 18 9 9 0 010-18z"
                         />
                       </svg>
@@ -396,6 +420,7 @@ function Home() {
                     <p className="text-white mb-3 whitespace-pre-wrap">
                       {tweet.content}
                     </p>
+
                     {tweet.image && (
                       <img
                         src={tweet.image}
@@ -637,7 +662,7 @@ function Home() {
             value={searchQuery}
             onChange={handleSearchInputChange}
             className="w-full bg-gray-900 border border-gray-800 rounded-full py-3 pl-10 pr-10 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
-            placeholder="Search people..."
+            placeholder={t("search")}
           />
           {searchQuery && (
             <button
@@ -665,9 +690,24 @@ function Home() {
               {isSearching ? (
                 <div className="p-4 text-center text-gray-400">
                   <div className="flex items-center justify-center">
-                    <svg className="animate-spin h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      className="animate-spin h-5 w-5 mr-2"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
                     Searching...
                   </div>
@@ -688,7 +728,9 @@ function Home() {
                     />
                   </svg>
                   <p className="text-sm">No users found for "{searchQuery}"</p>
-                  <p className="text-xs text-gray-500 mt-1">Try searching for a different name or username</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Try searching for a different name or username
+                  </p>
                 </div>
               ) : (
                 <div className="py-2">
@@ -715,9 +757,7 @@ function Home() {
                         )}
                       </div>
                       <div className="flex-1 text-left">
-                        <div className="font-bold text-white">
-                          {user.name}
-                        </div>
+                        <div className="font-bold text-white">{user.name}</div>
                         <div className="text-gray-500 text-sm">
                           @{user.username}
                         </div>
@@ -747,31 +787,31 @@ function Home() {
 
         {/* Premium, Promo, and Footer */}
         <div className="bg-gray-900 rounded-2xl p-4">
-          <h2 className="text-xl font-bold mb-2">Subscribe to Premium</h2>
+          <h2 className="text-xl font-bold mb-2">
+            {t("subscribe_to_premium")}
+          </h2>
           <p className="text-gray-400 text-sm mb-3">
-            Subscribe to unlock new features and if eligible, receive a share of
-            revenue.
+            {t("premium_description")}
           </p>
           <button className="bg-blue-500 text-white px-6 py-2 rounded-full font-bold hover:bg-blue-600">
-            Subscribe
+            {t("subscribe")}
           </button>
         </div>
         <div className="bg-gradient-to-br from-purple-900/50 to-blue-900/50 rounded-2xl p-4 border border-gray-800">
           <div className="flex items-center mb-3">
             <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-            <span className="text-xs text-gray-400">PROMOTED</span>
+            <span className="text-xs text-gray-400">{t("promoted")}</span>
           </div>
-          <h3 className="font-bold text-lg mb-2">Build Amazing Apps</h3>
+          <h3 className="font-bold text-lg mb-2">{t("build_amazing_apps")}</h3>
           <p className="text-gray-300 text-sm mb-3">
-            Start your coding journey with our comprehensive web development
-            course. Learn React, Node.js, and more!
+            {t("coding_course_description")}
           </p>
           <div className="flex items-center justify-between">
             <span className="text-blue-400 text-sm font-medium">
               Learn More
             </span>
             <button className="bg-blue-500 text-white px-4 py-1 rounded-full text-sm hover:bg-blue-600">
-              Join Now
+              {t("join_now")}
             </button>
           </div>
         </div>

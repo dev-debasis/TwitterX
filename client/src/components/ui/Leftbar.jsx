@@ -1,14 +1,23 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 function Leftbar() {
+  const { t } = useTranslation();
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const userData = localStorage.getItem("user");
     if (userData) {
-      setUser(JSON.parse(userData));
+      const parsedUser = JSON.parse(userData);
+      setUser(parsedUser);
+
+      // Set language from user preference
+      if (parsedUser.language) {
+        // Don't import i18n here, use useTranslation hook instead
+      }
     }
   }, []);
 
@@ -16,6 +25,13 @@ function Leftbar() {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     navigate("/signin");
+  };
+
+  const handleLanguageChange = (newLanguage) => {
+    // Update local user state
+    if (user) {
+      setUser({ ...user, language: newLanguage });
+    }
   };
 
   return (
@@ -42,7 +58,7 @@ function Leftbar() {
             <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
               <path d="M21.591 7.146L12.52 1.157c-.316-.21-.724-.21-1.04 0l-9.071 5.989c-.26.173-.409.456-.409.757v13.183c0 .502.418.913.929.913H9.14c.51 0 .929-.41.929-.913v-7.075h3.909v7.075c0 .502.417.913.928.913h6.165c.511 0 .929-.41.929-.913V7.904c0-.301-.158-.584-.408-.758z" />
             </svg>
-            <span className="text-xl font-normal">Home</span>
+            <span className="text-xl font-normal">{t("home")}</span>
           </Link>
 
           {/* Search */}
@@ -60,13 +76,14 @@ function Leftbar() {
                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
               />
             </svg>
-            <span className="text-xl font-normal">Search</span>
+            <span className="text-xl font-normal">{t("search")}</span>
           </div>
 
           {/* Profile */}
-          <Link 
+          <Link
             to="/profile"
-            className="flex items-center space-x-4 p-3 rounded-full hover:bg-gray-900 cursor-pointer">
+            className="flex items-center space-x-4 p-3 rounded-full hover:bg-gray-900 cursor-pointer"
+          >
             <svg
               className="w-6 h-6"
               fill="currentColor"
@@ -77,21 +94,8 @@ function Leftbar() {
                 <path d="M5.651 19h12.698c-.337-1.8-1.023-3.21-1.945-4.19C15.318 13.65 13.838 13 12 13s-3.317.65-4.404 1.81c-.922.98-1.608 2.39-1.945 4.19zm.486-5.56C7.627 11.85 9.648 11 12 11s4.373.85 5.863 2.44c1.477 1.58 2.366 3.8 2.632 6.46l.11 1.1H3.395l.11-1.1c.266-2.66 1.155-4.88 2.632-6.46zM12 4c-1.105 0-2 .9-2 2s.895 2 2 2 2-.9 2-2-.895-2-2-2zM8 6c0-2.21 1.791-4 4-4s4 1.79 4 4-1.791 4-4 4-4-1.79-4-4z" />
               </g>
             </svg>
-            <span className="text-xl font-normal">Profile</span>
+            <span className="text-xl font-normal">{t("profile")}</span>
           </Link>
-
-          {/* Grok */}
-          <a
-            href="https://x.com/i/grok"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center space-x-4 p-3 rounded-full hover:bg-gray-900 cursor-pointer"
-          >
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 33 32">
-              <path d="M12.745 20.54l10.97-8.19c.539-.4 1.307-.244 1.564.38 1.349 3.288.746 7.241-1.938 9.955-2.683 2.714-6.417 3.31-9.83 1.954l-3.728 1.745c5.347 3.697 11.84 2.782 15.898-1.324 3.219-3.255 4.216-7.692 3.284-11.693l.008.009c-1.351-5.878.332-8.227 3.782-13.031L33 0l-4.54 4.59v-.014L12.743 20.544m-2.263 1.987c-3.837-3.707-3.175-9.446.1-12.755 2.42-2.449 6.388-3.448 9.852-1.979l3.72-1.737c-.67-.49-1.53-1.017-2.515-1.387-4.455-1.854-9.789-.931-13.41 2.728-3.483 3.523-4.579 8.94-2.697 13.561 1.405 3.454-.899 5.898-3.22 8.364C1.49 30.2.666 31.074 0 32l10.478-9.466" />
-            </svg>
-            <span className="text-xl font-normal">Grok</span>
-          </a>
 
           {/* Settings */}
           <Link
@@ -117,7 +121,7 @@ function Leftbar() {
                 d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
               />
             </svg>
-            <span className="text-xl font-normal">Settings</span>
+            <span className="text-xl font-normal">{t("settings")}</span>
           </Link>
 
           {/* Logout */}
@@ -139,7 +143,31 @@ function Leftbar() {
                 d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
               />
             </svg>
-            <span className="text-xl font-normal">Logout</span>
+            <span className="text-xl font-normal">{t("logout")}</span>
+          </div>
+
+          {/* Language Switcher */}
+          <div
+            className="flex items-center space-x-4 p-3 rounded-full"
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+              />
+            </svg>
+            <LanguageSwitcher
+              user={user}
+              onLanguageChange={handleLanguageChange}
+            />
           </div>
         </nav>
 

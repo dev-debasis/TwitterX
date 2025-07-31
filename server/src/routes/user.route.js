@@ -1,5 +1,5 @@
 import { Router } from "express"
-import { loginUser, registerUser, profile, updateAvatar, updateCoverImage, changePassword, updateProfile, searchUser, getUserProfile, getNotification } from "../controllers/user.controller.js"
+import { loginUser, registerUser, profile, updateAvatar, updateCoverImage, changePassword, updateProfile, searchUser, getUserProfile, getNotification, updatePhoneNumber } from "../controllers/user.controller.js"
 import { verifyJWT } from "../middlewares/auth.middleware.js"
 import { toggleFollow } from "../controllers/follow.controller.js"
 import { upload } from "../middlewares/multer.middleware.js"
@@ -20,5 +20,5 @@ router.route("/follow/:id").patch(verifyJWT, toggleFollow)
 router.route("/search").get(searchUser)
 router.route("/profile/:username").get(verifyJWT, getUserProfile)
 router.route('/notifications').patch(verifyJWT, getNotification)
-
+router.route("/update-phone").post(verifyJWT, updatePhoneNumber);
 export default router

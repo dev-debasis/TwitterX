@@ -390,8 +390,8 @@ const getNotification = async (req, res) => {
   try {
     const { notificationsEnabled } = req.body;
     if (typeof notificationsEnabled !== "boolean") {
-      return res.status(400).json({ 
-        message: "notificationsEnabled must be boolean" 
+      return res.status(400).json({
+        message: "notificationsEnabled must be boolean",
       });
     }
     const user = await User.findByIdAndUpdate(
@@ -399,15 +399,42 @@ const getNotification = async (req, res) => {
       { notificationsEnabled },
       { new: true }
     ).select("notificationsEnabled");
-    return res.status(200).json({ 
-      notificationsEnabled: user.notificationsEnabled || true 
+    return res.status(200).json({
+      notificationsEnabled: user.notificationsEnabled || true,
     });
   } catch (err) {
-    console.error("Server error in the notification: ",error)
-    return res.status(500).json({ 
-      message: error.message
+    console.error("Server error in the notification: ", error);
+    return res.status(500).json({
+      message: error.message,
     });
   }
+};
+
+const updatePhoneNumber = async (req, res) => {
+  const { phoneNumber } = req.body;
+  if (!phoneNumber) {
+    return res.status(400).json({
+      message: "Phone number is required.",
+    });
+  }
+  if (!req.user || !req.user._id) {
+    return res.status(401).json({ 
+      message: "Unauthorized access." 
+    });
+  }
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    return res.status(404).json({
+      message: "User not found.",
+    });
+  }
+  user.phoneNumber = phoneNumber;
+  user.phoneVerified = false;
+  await user.save();
+  return res.status(200).json({
+    message: "Phone number updated.",
+  });
 };
 
 export {
@@ -421,4 +448,5 @@ export {
   searchUser,
   getUserProfile,
   getNotification,
+  updatePhoneNumber,
 };

@@ -4,6 +4,7 @@ import Signup from './pages/Signup.jsx'
 import Signin from './pages/Signin.jsx'
 import Profile from './pages/Profile.jsx'
 import Settings from './pages/Settings.jsx'
+import "./i18n";
 
 function App() {
   return (

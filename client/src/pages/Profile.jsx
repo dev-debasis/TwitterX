@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Leftbar from "../components/ui/Leftbar.jsx";
+import { useTranslation } from "react-i18next";
 
 function Profile() {
+  const { t } = useTranslation();
   const [user, setUser] = useState(null);
   const [userTweets, setUserTweets] = useState([]);
   const [activeTab, setActiveTab] = useState("posts");
@@ -37,7 +39,6 @@ function Profile() {
       const data = await response.json();
 
       if (response.ok) {
-        // Filter tweets by current user
         const currentUser = JSON.parse(localStorage.getItem("user"));
         const filteredTweets =
           data.tweets?.filter(
@@ -130,7 +131,7 @@ function Profile() {
             </button>
             <div>
               <h1 className="text-xl font-bold">{user?.name}</h1>
-              <p className="text-gray-500 text-sm">{userTweets.length} posts</p>
+              <p className="text-gray-500 text-sm">{userTweets.length} {t("posts")}</p>
             </div>
           </div>
         </div>
@@ -171,13 +172,13 @@ function Profile() {
               <Link 
                 to="/settings"
                 className="border border-gray-600 text-white px-6 py-2 rounded-full font-bold hover:bg-gray-900 cursor-pointer">
-                  Edit profile
+                  {t("edit_profile")}
               </Link>
               <button
                 onClick={handleLogout}
                 className="bg-blue-500 text-white px-6 py-2 rounded-full font-bold hover:bg-red-700 cursor-pointer"
               >
-                Logout
+                {t("logout")}
               </button>
             </div>
           </div>
@@ -249,7 +250,7 @@ function Profile() {
                 />
               </svg>
               <span>
-                Joined{" "}
+                {t("joined")}{" "}
                 {user?.createdAt
                   ? new Date(user.createdAt).toLocaleDateString("en-GB", {
                       day: "2-digit",

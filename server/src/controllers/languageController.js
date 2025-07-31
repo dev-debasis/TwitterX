@@ -6,7 +6,7 @@ import speakeasy from "speakeasy";
 
 const requestLanguageChange = async (req, res) => {
   try {
-    const { language, phoneNumber } = req.body;
+    const { language } = req.body;
     const user = req.user;
 
     if (!user) {
@@ -59,13 +59,13 @@ const requestLanguageChange = async (req, res) => {
         otpType: "email",
       });
     } else if (["es", "hi", "pt", "zh"].includes(language)) {
-      if (!phoneNumber) {
+      if (!user.phoneNumber) {
         return res.status(400).json({
           message: i18n.t("phone_required", { lng: "en" }),
         });
       }
 
-      const otp = await sendSMSOTP(phoneNumber, language);
+      const otp = await sendSMSOTP(user.phoneNumber, language);
       user.otpCode = otp;
       user.otpExpiry = Date.now() + 5 * 60 * 1000;
       user.otpType = "sms";
