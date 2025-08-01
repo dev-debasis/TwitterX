@@ -20,8 +20,9 @@ function Settings() {
     location: "",
     website: "",
   });
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [notifLoading, setNotifLoading] = useState(false);
+  const [browserPermission, setBrowserPermission] = useState("default");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -43,11 +44,14 @@ function Settings() {
         location: userInfo.location || "",
         website: userInfo.website || "",
       });
-      setNotificationsEnabled(
-        typeof userInfo.notificationsEnabled === "boolean"
-          ? userInfo.notificationsEnabled
-          : true
-      );
+      
+      // Fixed: Properly handle the notification setting with explicit boolean check
+      setNotificationsEnabled(userInfo.notificationsEnabled === true);
+    }
+
+    // Check current browser notification permission
+    if ("Notification" in window) {
+      setBrowserPermission(Notification.permission);
     }
   }, [navigate]);
 
@@ -116,14 +120,56 @@ function Settings() {
     
   };
 
+  const requestBrowserPermission = async () => {
+    if (!("Notification" in window)) {
+      alert("This browser does not support notifications");
+      return false;
+    }
+
+    try {
+      const permission = await Notification.requestPermission();
+      setBrowserPermission(permission);
+      return permission === "granted";
+    } catch (error) {
+      console.error("Error requesting notification permission:", error);
+      return false;
+    }
+  };
+
   const handleNotificationToggle = async () => {
     const newValue = !notificationsEnabled;
     
+    console.log("🔄 Toggle clicked:", { 
+      currentValue: notificationsEnabled, 
+      newValue, 
+      browserPermission 
+    });
+    
+    // If user is trying to enable notifications
+    if (newValue) {
+      // Check browser permission first
+      if (browserPermission === "denied") {
+        alert("Browser notifications are blocked. Please enable them in your browser settings.");
+        return;
+      }
+      
+      if (browserPermission === "default") {
+        // Request permission first
+        const granted = await requestBrowserPermission();
+        if (!granted) {
+          alert("Browser notification permission is required to enable notifications.");
+          return;
+        }
+      }
+    }
+    
+    // Update state immediately for better UX
     setNotificationsEnabled(newValue);
     setNotifLoading(true);
     
     try {
       const token = localStorage.getItem("token");
+  
       const response = await fetch(
         "http://localhost:8000/api/v1/users/notifications",
         {
@@ -136,28 +182,47 @@ function Settings() {
         }
       );
       
+      const data = await response.json();
+      
       if (response.ok) {
-        const data = await response.json();
-
-        if (data.notificationsEnabled !== undefined) {
-          setNotificationsEnabled(data.notificationsEnabled);
-        }
+        const finalValue = data.notificationsEnabled !== undefined ? data.notificationsEnabled : newValue;        
+        setNotificationsEnabled(finalValue);
         
+        // Updating localStorage
         const userData = JSON.parse(localStorage.getItem("user") || "{}");
-        userData.notificationsEnabled = data.notificationsEnabled !== undefined ? data.notificationsEnabled : newValue;
-        localStorage.setItem("user", JSON.stringify(userData));
-        
+        userData.notificationsEnabled = finalValue;
+        localStorage.setItem("user", JSON.stringify(userData));        
       } else {
         setNotificationsEnabled(!newValue);
-        const data = await response.json();
         console.error("Failed to update notification settings:", data);
+        alert(`Failed to update notification settings: ${data.message || 'Unknown error'}`);
       }
     } catch (error) {
       setNotificationsEnabled(!newValue);
-      console.error("Error updating notification settings:", error);
+      alert("Error updating notification settings. Please check your connection and try again.");
     } finally {
       setNotifLoading(false);
     }
+  };
+
+  const getNotificationStatus = () => {
+    if (browserPermission === "denied") {
+      return { text: "Blocked in browser", color: "text-red-400" };
+    }
+    if (browserPermission === "default") {
+      return { text: "Permission needed", color: "text-yellow-400" };
+    }
+    if (browserPermission === "granted" && notificationsEnabled) {
+      return { text: "On", color: "text-green-400" };
+    }
+    if (browserPermission === "granted" && !notificationsEnabled) {
+      return { text: "Off", color: "text-gray-400" };
+    }
+    return { text: "Unknown", color: "text-gray-400" };
+  };
+
+  const canToggle = () => {
+    return !notifLoading && browserPermission !== "denied";
   };
 
   const settingsOptions = [
@@ -544,16 +609,66 @@ function Settings() {
 
                 <div className="bg-gray-900 rounded-xl p-6 mb-6">
                   <h3 className="text-lg font-bold mb-4">{t("browser_notifications")}</h3>
+                  
+                  {/* Browser Permission Status */}
+                  <div className="mb-4 p-3 bg-gray-800 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-300">Browser Permission:</span>
+                      <span className={`text-sm font-medium ${
+                        browserPermission === "granted" ? "text-green-400" :
+                        browserPermission === "denied" ? "text-red-400" : "text-yellow-400"
+                      }`}>
+                        {browserPermission === "granted" ? "Granted" :
+                         browserPermission === "denied" ? "Blocked" : "Not Requested"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Request Permission Button*/}
+                  {browserPermission === "default" && (
+                    <div className="mb-4">
+                      <button
+                        onClick={requestBrowserPermission}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        Enable Browser Notifications
+                      </button>
+                      <p className="text-sm text-gray-400 mt-2">
+                        Click to allow notifications from this website
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Blocked Message */}
+                  {browserPermission === "denied" && (
+                    <div className="mb-4 p-3 bg-red-900/20 border border-red-800 rounded-lg">
+                      <p className="text-red-400 text-sm">
+                        Notifications are blocked in your browser. To enable them:
+                      </p>
+                      <ul className="text-red-300 text-xs mt-2 ml-4 list-disc">
+                        <li>Click the lock icon in your address bar</li>
+                        <li>Set notifications to "Allow"</li>
+                        <li>Refresh this page</li>
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Main Toggle */}
                   <div className="flex items-center justify-between">
-                    <span className="text-white">{t("enable_browser_notifications")}</span>
+                    <div>
+                      <span className="text-white font-medium">{t("enable_browser_notifications")}</span>
+                      <p className="text-sm text-gray-400 mt-1">
+                        Get notified when tweets contain "cricket" or "science"
+                      </p>
+                    </div>
                     <div className="flex items-center">
                       <button
                         type="button"
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 ${
                           notificationsEnabled ? "bg-blue-600" : "bg-gray-600"
-                        } ${notifLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                        } ${!canToggle() ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
                         onClick={handleNotificationToggle}
-                        disabled={notifLoading}
+                        disabled={!canToggle()}
                         aria-pressed={notificationsEnabled}
                         aria-label="Toggle browser notifications"
                       >
@@ -563,8 +678,8 @@ function Settings() {
                           }`}
                         />
                       </button>
-                      <span className="ml-3 text-sm text-gray-400">
-                        {notifLoading ? "Loading..." : notificationsEnabled ? "On" : "Off"}
+                      <span className={`ml-3 text-sm ${getNotificationStatus().color}`}>
+                        {notifLoading ? "Loading..." : getNotificationStatus().text}
                       </span>
                     </div>
                   </div>

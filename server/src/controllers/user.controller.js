@@ -400,7 +400,7 @@ const getNotification = async (req, res) => {
       { new: true }
     ).select("notificationsEnabled");
     return res.status(200).json({
-      notificationsEnabled: user.notificationsEnabled || true,
+      notificationsEnabled: user.notificationsEnabled,
     });
   } catch (err) {
     console.error("Server error in the notification: ", error);

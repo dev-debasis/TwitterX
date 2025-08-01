@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Leftbar from "../components/ui/Leftbar.jsx";
 import { useTranslation } from "react-i18next";
 import { getTranslation } from "../api/translateApi.js";
-
-const containsKeywords = (content) => /cricket|science/i.test(content);
+import { handleTweetNotification } from "../utils/notificationUtils.js";
 
 function Home() {
   const { t, i18n } = useTranslation();
@@ -21,7 +20,6 @@ function Home() {
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [tweetReplies, setTweetReplies] = useState({});
   const [loadingReplies, setLoadingReplies] = useState({});
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [tweetTranslations, setTweetTranslations] = useState({});
   const [replyTranslations, setReplyTranslations] = useState({});
   const [translatingTweet, setTranslatingTweet] = useState(null);
@@ -41,22 +39,9 @@ function Home() {
     if (userData) {
       const userObj = JSON.parse(userData);
       setUser(userObj);
-      setNotificationsEnabled(
-        typeof userObj.notificationsEnabled === "boolean"
-          ? userObj.notificationsEnabled
-          : true
-      );
     }
     fetchTweets();
   }, [navigate]);
-
-  useEffect(() => {
-    if (notificationsEnabled && "Notification" in window) {
-      if (Notification.permission === "default") {
-        Notification.requestPermission();
-      }
-    }
-  }, [notificationsEnabled]);
 
   const fetchTweets = async () => {
     try {
@@ -125,15 +110,18 @@ function Home() {
       });
 
       if (response.ok) {
-        if (
-          Notification.permission === "granted" &&
-          containsKeywords(newTweet)
-        ) {
-          new Notification("New Tweet", {
-            body: newTweet,
-            icon: user?.avatar || "/favicon.ico",
-          });
-        }
+        const data = await response.json();
+        
+        // Creating tweet object for notification
+        const tweetForNotification = {
+          _id: data.tweet?._id || Date.now(),
+          content: newTweet,
+          userId: user
+        };
+
+        // Handling notification using utility function
+        handleTweetNotification(tweetForNotification);
+        
         setNewTweet("");
         fetchTweets();
       }
@@ -180,6 +168,18 @@ function Home() {
         }
       );
       if (response.ok) {
+        const data = await response.json();
+        
+        // Create reply object for notification (if it contains keywords)
+        const replyForNotification = {
+          _id: data.reply?._id || Date.now(),
+          content: replyContent,
+          userId: user
+        };
+
+        // Handle notification for reply using utility function
+        handleTweetNotification(replyForNotification);
+        
         setReplyContent("");
         fetchTweets();
         setTweetReplies((prev) => ({ ...prev, [tweetId]: null }));
@@ -285,6 +285,26 @@ function Home() {
       setTranslatingReply(null);
     }
   };
+
+  // Function to simulate receiving new tweets (for real-time updates)
+  const handleIncomingTweet = (tweet) => {
+    // This would be called from WebSocket, SSE, or polling
+    setTweets(prev => [tweet, ...prev]);
+    
+    // Handle notification for incoming tweets
+    handleTweetNotification(tweet);
+  };
+
+  // You can add this for testing purposes or real-time updates
+  useEffect(() => {
+    // Example: If you have WebSocket or polling for real-time tweets
+    // const socket = new WebSocket('ws://localhost:8000');
+    // socket.onmessage = (event) => {
+    //   const tweet = JSON.parse(event.data);
+    //   handleIncomingTweet(tweet);
+    // };
+    // return () => socket.close();
+  }, []);
 
   if (isLoadingTweets) {
     return (
@@ -609,11 +629,8 @@ function Home() {
                               </div>
                             ) : (
                               tweetReplies[tweet._id].map((reply) => (
-                                <div>
-                                  <div
-                                    key={reply._id}
-                                    className="flex space-x-3 bg-gray-950/30 rounded-lg p-3"
-                                  >
+                                <div key={reply._id}>
+                                  <div className="flex space-x-3 bg-gray-950/30 rounded-lg p-3">
                                     <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
                                       {reply.userId?.avatar ? (
                                         <img

@@ -75,5 +75,7 @@
   "browser_notifications": "Browser Notifications",
   "enable_browser_notifications": "Enable browser notifications",
   "for_you": "For you",
-  "what_is_happening": "What is happening"
+  "what_is_happening": "What is happening",
+  "search": "Search",
+  "logout": "Logout"
 }
