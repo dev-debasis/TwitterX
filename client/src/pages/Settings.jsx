@@ -138,8 +138,7 @@ function Settings() {
       
       if (response.ok) {
         const data = await response.json();
-        console.log("API Response:", data);
-        
+
         if (data.notificationsEnabled !== undefined) {
           setNotificationsEnabled(data.notificationsEnabled);
         }
@@ -148,7 +147,6 @@ function Settings() {
         userData.notificationsEnabled = data.notificationsEnabled !== undefined ? data.notificationsEnabled : newValue;
         localStorage.setItem("user", JSON.stringify(userData));
         
-        console.log("Notification settings successfully updated to:", newValue);
       } else {
         setNotificationsEnabled(!newValue);
         const data = await response.json();
@@ -165,7 +163,7 @@ function Settings() {
   const settingsOptions = [
     {
       id: "home",
-      title: "Home",
+      title: "home",
       icon: (
         <svg
           className="w-6 h-6"
@@ -181,7 +179,7 @@ function Settings() {
     },
     {
       id: "account",
-      title: "Account",
+      title: "account",
       icon: (
         <svg
           className="w-6 h-6"
@@ -200,7 +198,7 @@ function Settings() {
     },
     {
       id: "privacy",
-      title: "Privacy and safety",
+      title: "privacy_and_safety",
       icon: (
         <svg
           className="w-6 h-6"
@@ -219,7 +217,7 @@ function Settings() {
     },
     {
       id: "notifications",
-      title: "Notifications",
+      title: "notifications",
       icon: (
         <svg
           className="w-6 h-6"
@@ -284,7 +282,7 @@ function Settings() {
                     }`}
                   >
                     {option.icon}
-                    <span className="text-left">{option.title}</span>
+                    <span className="text-left">{t(option.title)}</span>
                   </button>
                 ))}
               </div>

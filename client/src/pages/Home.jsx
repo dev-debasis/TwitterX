@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Leftbar from "../components/ui/Leftbar.jsx";
 import { useTranslation } from "react-i18next";
+import { getTranslation } from "../api/translateApi.js";
 
 const containsKeywords = (content) => /cricket|science/i.test(content);
 
@@ -21,6 +22,10 @@ function Home() {
   const [tweetReplies, setTweetReplies] = useState({});
   const [loadingReplies, setLoadingReplies] = useState({});
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [tweetTranslations, setTweetTranslations] = useState({});
+  const [replyTranslations, setReplyTranslations] = useState({});
+  const [translatingTweet, setTranslatingTweet] = useState(null);
+  const [translatingReply, setTranslatingReply] = useState(null);
 
   const navigate = useNavigate();
 
@@ -248,6 +253,39 @@ function Home() {
     setShowSearchResults(false);
   };
 
+  const handleTranslateTweet = async (tweetId, content) => {
+    setTranslatingTweet(tweetId);
+    try {
+      const translated = await getTranslation(content, i18n.language);
+      setTweetTranslations((prev) => ({ ...prev, [tweetId]: translated }));
+    } catch {
+      setTweetTranslations((prev) => ({
+        ...prev,
+        [tweetId]: t("translation_failed"),
+      }));
+    } finally {
+      setTranslatingTweet(null);
+    }
+  };
+
+  const handleTranslateReply = async (tweetId, replyId, content) => {
+    setTranslatingReply(replyId);
+    try {
+      const translated = await getTranslation(content, i18n.language);
+      setReplyTranslations((prev) => ({
+        ...prev,
+        [`${tweetId}_${replyId}`]: translated,
+      }));
+    } catch {
+      setReplyTranslations((prev) => ({
+        ...prev,
+        [`${tweetId}_${replyId}`]: t("translation_failed"),
+      }));
+    } finally {
+      setTranslatingReply(null);
+    }
+  };
+
   if (isLoadingTweets) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -357,7 +395,7 @@ function Home() {
                     disabled={!newTweet.trim() || isLoading}
                     className="bg-blue-500 text-white px-6 py-2 rounded-full font-bold hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isLoading ? "Posting..." : "Post"}
+                    {t(isLoading ? "posting" : "post")}{" "}
                   </button>
                 </div>
               </div>
@@ -428,6 +466,24 @@ function Home() {
                         className="rounded-2xl max-w-full mb-3"
                       />
                     )}
+                    <div>
+                      <button
+                        className="text-blue-400 underline text-xs"
+                        onClick={() =>
+                          handleTranslateTweet(tweet._id, tweet.content)
+                        }
+                        disabled={translatingTweet === tweet._id}
+                      >
+                        {translatingTweet === tweet._id
+                          ? t("loading")
+                          : t("translate")}
+                      </button>
+                      {tweetTranslations[tweet._id] && (
+                        <div className="text-green-300 text-sm mt-1">
+                          {tweetTranslations[tweet._id]}
+                        </div>
+                      )}
+                    </div>
                     {/* Tweet Actions */}
                     <div className="flex items-center justify-between max-w-md">
                       <button
@@ -553,41 +609,74 @@ function Home() {
                               </div>
                             ) : (
                               tweetReplies[tweet._id].map((reply) => (
-                                <div
-                                  key={reply._id}
-                                  className="flex space-x-3 bg-gray-950/30 rounded-lg p-3"
-                                >
-                                  <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
-                                    {reply.userId?.avatar ? (
-                                      <img
-                                        src={reply.userId.avatar}
-                                        alt={reply.userId.name}
-                                        className="w-8 h-8 rounded-full object-cover"
-                                      />
-                                    ) : (
-                                      <span className="text-sm font-bold">
-                                        {reply.userId?.name?.charAt(0) || "U"}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="flex-1">
-                                    <div className="flex items-center space-x-2 mb-1">
-                                      <h4 className="font-bold text-sm hover:underline cursor-pointer">
-                                        {reply.userId?.name}
-                                      </h4>
-                                      <span className="text-gray-500 text-sm">
-                                        @{reply.userId?.username}
-                                      </span>
-                                      <span className="text-gray-500 text-sm">
-                                        ·
-                                      </span>
-                                      <span className="text-gray-500 text-sm">
-                                        {formatTime(reply.createdAt)}
-                                      </span>
+                                <div>
+                                  <div
+                                    key={reply._id}
+                                    className="flex space-x-3 bg-gray-950/30 rounded-lg p-3"
+                                  >
+                                    <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
+                                      {reply.userId?.avatar ? (
+                                        <img
+                                          src={reply.userId.avatar}
+                                          alt={reply.userId.name}
+                                          className="w-8 h-8 rounded-full object-cover"
+                                        />
+                                      ) : (
+                                        <span className="text-sm font-bold">
+                                          {reply.userId?.name?.charAt(0) || "U"}
+                                        </span>
+                                      )}
                                     </div>
-                                    <p className="text-white text-sm whitespace-pre-wrap">
-                                      {reply.content}
-                                    </p>
+                                    <div className="flex-1">
+                                      <div className="flex items-center space-x-2 mb-1">
+                                        <h4 className="font-bold text-sm hover:underline cursor-pointer">
+                                          {reply.userId?.name}
+                                        </h4>
+                                        <span className="text-gray-500 text-sm">
+                                          @{reply.userId?.username}
+                                        </span>
+                                        <span className="text-gray-500 text-sm">
+                                          ·
+                                        </span>
+                                        <span className="text-gray-500 text-sm">
+                                          {formatTime(reply.createdAt)}
+                                        </span>
+                                      </div>
+                                      <p className="text-white text-sm whitespace-pre-wrap">
+                                        {reply.content}
+                                      </p>
+
+                                      <div>
+                                        <button
+                                          className="text-blue-400 underline text-xs"
+                                          onClick={() =>
+                                            handleTranslateReply(
+                                              tweet._id,
+                                              reply._id,
+                                              reply.content
+                                            )
+                                          }
+                                          disabled={
+                                            translatingReply === reply._id
+                                          }
+                                        >
+                                          {translatingReply === reply._id
+                                            ? t("loading")
+                                            : t("translate")}
+                                        </button>
+                                        {replyTranslations[
+                                          `${tweet._id}_${reply._id}`
+                                        ] && (
+                                          <div className="text-green-300 text-xs mt-1">
+                                            {
+                                              replyTranslations[
+                                                `${tweet._id}_${reply._id}`
+                                              ]
+                                            }
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
                               ))

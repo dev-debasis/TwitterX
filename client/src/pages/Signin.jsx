@@ -64,9 +64,7 @@ function Signin() {
 
         const data = await response.json()
 
-        if (response.ok) {
-          console.log('Login successful:', data)
-          
+        if (response.ok) {          
           if (data.token) {
             localStorage.setItem('token', data.token)
           }

@@ -3,6 +3,7 @@ import { sendEmailOTP } from "../services/emailService.js";
 import { sendSMSOTP } from "../services/smsService.js";
 import i18n from "../config/i18n.js";
 import speakeasy from "speakeasy";
+import axios from "axios";
 
 const requestLanguageChange = async (req, res) => {
   try {
@@ -168,7 +169,34 @@ const verifyLanguageChange = async (req, res) => {
   }
 };
 
+const dynamicTranslate = async (req, res) => {
+  const { text, to, from = "en" } = req.query;
+  if (!text || !to) {
+    return res.status(400).json({ 
+      message: "Missing text or target language." 
+    });
+  }
+  try {
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${from}|${to}`;
+    const response = await axios.get(url);
+    const translation = response.data?.responseData?.translatedText;
+    if (!translation) {
+      throw new Error("Translation failed");
+    }
+    res.json({ 
+      message: "Successfully translated.",
+      translation 
+    });
+  } catch (error) {
+    console.error("Server side error while translating the dynamic contents: ",error);
+    return res.status(500).json({ 
+      message: error.message 
+    });
+  }
+};
+
 export { 
   requestLanguageChange, 
-  verifyLanguageChange 
+  verifyLanguageChange,
+  dynamicTranslate
 };

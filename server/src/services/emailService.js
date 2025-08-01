@@ -35,7 +35,6 @@ export const sendEmailOTP = async (email, lang = "fr") => {
       text: messages[lang] || messages.en
     });
 
-    console.log(`Email OTP sent to ${email}: ${otp}`);
     return otp;
     
   } catch (error) {

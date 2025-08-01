@@ -69,12 +69,9 @@ function Signup() {
 
         const data = await response.json()
 
-        if (response.ok) {
-          console.log('Registration successful:', data)
-          
+        if (response.ok) {          
           if (data.token) {
             localStorage.setItem('token', data.token)
-            console.log("token: ",data.token)
           }
           
           navigate('/signin')

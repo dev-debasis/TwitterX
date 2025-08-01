@@ -33,6 +33,7 @@
   "save": "Salvar",
   "delete": "Excluir",
   "post": "Publicar",
+  "posting": "Publicar...",
   "loading": "Carregando...",
   "error": "Erro",
   "success": "Sucesso",
@@ -76,5 +77,7 @@
   "browser_notifications": "Notificações do Navegador",
   "enable_browser_notifications": "Ativar notificações do navegador",
   "for_you": "Para você",
-  "what_is_happening": "O que está acontecendo"
+  "what_is_happening": "O que está acontecendo",
+  "search": "Procurar",
+  "logout": "Sair"
 }
