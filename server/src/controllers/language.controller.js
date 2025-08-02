@@ -35,7 +35,7 @@ const requestLanguageChange = async (req, res) => {
       });
     }
 
-    if (user.otpExpiry && Date.now() < user.otpExpiry) {
+    if (language !== 'en' && user.otpExpiry && Date.now() < user.otpExpiry) {
       return res.status(429).json({
         message: "Please wait before requesting a new OTP",
       });
@@ -170,7 +170,7 @@ const verifyLanguageChange = async (req, res) => {
 };
 
 const dynamicTranslate = async (req, res) => {
-  const { text, to, from = "en" } = req.query;
+  const { text, to, from = "auto" } = req.query;
   if (!text || !to) {
     return res.status(400).json({ 
       message: "Missing text or target language." 

@@ -111,17 +111,17 @@ function Home() {
 
       if (response.ok) {
         const data = await response.json();
-        
+
         // Creating tweet object for notification
         const tweetForNotification = {
           _id: data.tweet?._id || Date.now(),
           content: newTweet,
-          userId: user
+          userId: user,
         };
 
         // Handling notification using utility function
         handleTweetNotification(tweetForNotification);
-        
+
         setNewTweet("");
         fetchTweets();
       }
@@ -169,17 +169,17 @@ function Home() {
       );
       if (response.ok) {
         const data = await response.json();
-        
+
         // Create reply object for notification (if it contains keywords)
         const replyForNotification = {
           _id: data.reply?._id || Date.now(),
           content: replyContent,
-          userId: user
+          userId: user,
         };
 
         // Handle notification for reply using utility function
         handleTweetNotification(replyForNotification);
-        
+
         setReplyContent("");
         fetchTweets();
         setTweetReplies((prev) => ({ ...prev, [tweetId]: null }));
@@ -286,26 +286,6 @@ function Home() {
     }
   };
 
-  // Function to simulate receiving new tweets (for real-time updates)
-  const handleIncomingTweet = (tweet) => {
-    // This would be called from WebSocket, SSE, or polling
-    setTweets(prev => [tweet, ...prev]);
-    
-    // Handle notification for incoming tweets
-    handleTweetNotification(tweet);
-  };
-
-  // You can add this for testing purposes or real-time updates
-  useEffect(() => {
-    // Example: If you have WebSocket or polling for real-time tweets
-    // const socket = new WebSocket('ws://localhost:8000');
-    // socket.onmessage = (event) => {
-    //   const tweet = JSON.parse(event.data);
-    //   handleIncomingTweet(tweet);
-    // };
-    // return () => socket.close();
-  }, []);
-
   if (isLoadingTweets) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -323,13 +303,8 @@ function Home() {
       <div className="flex-1 ml-64 mr-80">
         {/* Header with tabs */}
         <div className="sticky top-0 bg-black/80 backdrop-blur-md border-b border-gray-800 z-50">
-          <div className="flex">
-            <div className="flex-1 text-center py-4 border-b-2 border-blue-500">
-              <span className="font-bold">{t("for_you")}</span>
-            </div>
-            <div className="flex-1 text-center py-4 text-gray-500 hover:bg-gray-900 cursor-pointer">
-              <span>{t("following")}</span>
-            </div>
+          <div className="flex-1 text-center py-4 border-b-2 border-blue-500">
+            <span className="font-bold">{t("for_you")}</span>
           </div>
         </div>
 
@@ -363,7 +338,7 @@ function Home() {
                     {/* Tweet action buttons (icons only, no handlers) */}
                     <button
                       type="button"
-                      className="hover:bg-blue-900/20 p-2 rounded-full"
+                      className="hover:bg-blue-900/20 p-2 rounded-full cursor-pointer"
                     >
                       <svg
                         className="w-5 h-5"
@@ -379,7 +354,10 @@ function Home() {
                         />
                       </svg>
                     </button>
-                    <button
+                    <a
+                      href="https://x.com/i/grok"
+                      target="_blank"
+                      rel="noopener noreferrer"
                       type="button"
                       className="hover:bg-blue-900/20 p-2 rounded-full"
                     >
@@ -390,10 +368,10 @@ function Home() {
                       >
                         <path d="M12.745 20.54l10.97-8.19c.539-.4 1.307-.244 1.564.38 1.349 3.288.746 7.241-1.938 9.955-2.683 2.714-6.417 3.31-9.83 1.954l-3.728 1.745c5.347 3.697 11.84 2.782 15.898-1.324 3.219-3.255 4.216-7.692 3.284-11.693l.008.009c-1.351-5.878.332-8.227 3.782-13.031L33 0l-4.54 4.59v-.014L12.743 20.544m-2.263 1.987c-3.837-3.707-3.175-9.446.1-12.755 2.42-2.449 6.388-3.448 9.852-1.979l3.72-1.737c-.67-.49-1.53-1.017-2.515-1.387-4.455-1.854-9.789-.931-13.41 2.728-3.483 3.523-4.579 8.94-2.697 13.561 1.405 3.454-.899 5.898-3.22 8.364C1.49 30.2.666 31.074 0 32l10.478-9.466" />
                       </svg>
-                    </button>
+                    </a>
                     <button
                       type="button"
-                      className="hover:bg-blue-900/20 p-2 rounded-full"
+                      className="hover:bg-blue-900/20 p-2 rounded-full cursor-pointer"
                     >
                       <svg
                         className="w-5 h-5"
@@ -463,17 +441,6 @@ function Home() {
                       <span className="text-gray-500">
                         {formatTime(tweet.createdAt)}
                       </span>
-                      <div className="ml-auto">
-                        <button className="p-2 rounded-full hover:bg-gray-800">
-                          <svg
-                            className="w-5 h-5 text-gray-500"
-                            fill="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
-                          </svg>
-                        </button>
-                      </div>
                     </div>
                     <p className="text-white mb-3 whitespace-pre-wrap">
                       {tweet.content}
@@ -505,11 +472,49 @@ function Home() {
                       )}
                     </div>
                     {/* Tweet Actions */}
-                    <div className="flex items-center justify-between max-w-md">
+                    <div className="flex items-center space-x-10 max-w-md">
+                      <button
+                        onClick={() => handleLike(tweet._id)}
+                        className={`cursor-pointer flex items-center space-x-2 ${
+                          tweet.likedBy?.includes(user._id)
+                            ? "text-red-400"
+                            : "text-gray-500 hover:text-red-400"
+                        } group`}
+                      >
+                        <div className="p-2 rounded-full group-hover:bg-red-900/20">
+                          {tweet.likedBy?.includes(user._id) ? (
+                            <svg
+                              className="w-5 h-5 fill-red-400"
+                              viewBox="0 0 24 24"
+                            >
+                              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                            </svg>
+                          ) : (
+                            // Empty heart
+                            <svg
+                              className="w-5 h-5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                              />
+                            </svg>
+                          )}
+                        </div>
+                        <span className="text-sm">{tweet.likeCounts || 0}</span>
+                      </button>
+
                       <button
                         onClick={() => handleReplyClick(tweet._id)}
-                        className={`flex items-center space-x-2 text-gray-500 hover:text-blue-400 group ${
-                          replyingTo === tweet._id ? "text-blue-400" : ""
+                        className={`cursor-pointer flex items-center space-x-2 text-gray-500 hover:text-blue-400 group ${
+                          replyingTo === tweet._id
+                            ? "text-blue-400"
+                            : "text-gray-500"
                         }`}
                       >
                         <div className="p-2 rounded-full group-hover:bg-blue-900/20">
@@ -530,85 +535,6 @@ function Home() {
                         <span className="text-sm">
                           {tweet.repliesCount || 0}
                         </span>
-                      </button>
-
-                      <button className="flex items-center space-x-2 text-gray-500 hover:text-green-400 group">
-                        <div className="p-2 rounded-full group-hover:bg-green-900/20">
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                            />
-                          </svg>
-                        </div>
-                        <span className="text-sm">
-                          {tweet.reTweetCount || 0}
-                        </span>
-                      </button>
-
-                      <button
-                        onClick={() => handleLike(tweet._id)}
-                        className="flex items-center space-x-2 text-gray-500 hover:text-red-400 group"
-                      >
-                        <div className="p-2 rounded-full group-hover:bg-red-900/20">
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                            />
-                          </svg>
-                        </div>
-                        <span className="text-sm">{tweet.likeCounts || 0}</span>
-                      </button>
-
-                      <button className="text-gray-500 hover:text-blue-400 group">
-                        <div className="p-2 rounded-full group-hover:bg-blue-900/20">
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
-                            />
-                          </svg>
-                        </div>
-                      </button>
-
-                      <button className="text-gray-500 hover:text-blue-400 group">
-                        <div className="p-2 rounded-full group-hover:bg-blue-900/20">
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-                            />
-                          </svg>
-                        </div>
                       </button>
                     </div>
                     {/* Replies Section */}

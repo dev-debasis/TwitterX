@@ -32,16 +32,9 @@ const getAllTweets = async (req, res) => {
     const tweets = await Tweet.find()
       .populate("userId", "name username avatar")
       .sort({ createdAt: -1 });
-
-    return res.status(200).json({
-      message: "All tweets fetched",
-      tweets,
-    });
-  } catch (error) {
-    console.error("Error fetching tweets:", error);
-    return res.status(500).json({
-      message: error.message,
-    });
+    res.json({ tweets });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
   }
 };
 

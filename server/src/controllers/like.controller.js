@@ -1,44 +1,38 @@
 import { Like } from "../models/like.model.js";
 import { Tweet } from "../models/tweet.model.js";
 
-const toggleLike = async (req, res) => {
+const likeTweet = async (req, res) => {
   try {
-    const { id: tweetId } = req.params;
+    const tweetId = req.params.tweetId;
     const userId = req.user._id;
 
-    const tweet = await Tweet.findById(tweetId)
+    const tweet = await Tweet.findById(tweetId);
+    if (!tweet) return res.status(404).json({ message: "Tweet not found" });
 
-    if(!tweet){
-      return res.status(404).json({
-        message: "No tweet found."
-      })
-    }
+    const alreadyLiked = tweet.likedBy.includes(userId);
 
-    const existingLike = await Like.findOne({ userId, tweetId });
-
-    if (existingLike) {
-      await Like.deleteOne({ _id: existingLike._id });
-      await Tweet.findByIdAndUpdate(tweetId, { $inc: { likeCounts: -1 } });
-
-      return res.status(200).json({ 
-        message: "Tweet unliked successfully." 
-    });
+    if (alreadyLiked) {
+      // Remove like
+      tweet.likedBy.pull(userId);
+      tweet.likeCounts = Math.max(0, tweet.likeCounts - 1);
     } else {
-      await Like.create({ userId, tweetId });
-      await Tweet.findByIdAndUpdate(tweetId, { $inc: { likeCounts: 1 } });
-
-      return res.status(200).json({ 
-        message: "Tweet liked successfully." 
-    });
+      // Add like
+      tweet.likedBy.push(userId);
+      tweet.likeCounts = (tweet.likeCounts || 0) + 1;
     }
-  } catch (error) {
-    console.error("Error in toggleLike:", error);
-    return res.status(500).json({ 
-        message: error.message 
+
+    await tweet.save();
+
+    res.json({
+      liked: !alreadyLiked,
+      likeCounts: tweet.likeCounts,
+      likedBy: tweet.likedBy,
     });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
   }
 };
 
 export {
-  toggleLike
+  likeTweet
 }
