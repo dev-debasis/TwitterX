@@ -135,7 +135,7 @@ const profile = async (req, res) => {
 
 const updateProfile = async (req, res) => {
   try {
-    const { name, email, username, bio } = req.body;
+    const { name, email, username, bio, location, profession } = req.body;
     if (![name, email, username, bio].every((field) => field?.trim())) {
       return res.status(400).json({
         message: "Empty fields are not allowed.",
@@ -170,6 +170,8 @@ const updateProfile = async (req, res) => {
           email,
           username,
           bio,
+          location,
+          profession,
         },
       },
       {

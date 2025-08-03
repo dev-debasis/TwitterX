@@ -42,6 +42,10 @@ const userSchema = new Schema({
         type: String,
         default: ""
     },
+    profession: {
+        type: String,
+        default: "Software developer/Programmer/Software engineer"
+    },
     notificationsEnabled: {
         type: Boolean,
         default: true

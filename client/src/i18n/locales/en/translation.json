@@ -14,7 +14,7 @@
   "resend_otp": "Resend OTP",
   "verify": "Verify",
   "cancel": "Cancel",
-  "email": "email",
+  "email": "Email",
   "phone": "phone number",
   "mobile": "mobile number",
   "verifying": "Verifying",
@@ -77,5 +77,6 @@
   "for_you": "For you",
   "what_is_happening": "What is happening",
   "search": "Search",
-  "logout": "Logout"
+  "logout": "Logout",
+  "profession": "Profession"
 }

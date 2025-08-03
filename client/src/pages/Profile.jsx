@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Leftbar from "../components/ui/Leftbar.jsx";
 import { useTranslation } from "react-i18next";
@@ -10,6 +10,10 @@ function Profile() {
   const [activeTab, setActiveTab] = useState("posts");
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const avatarInputRef = useRef();
+  const coverInputRef = useRef();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -71,6 +75,58 @@ function Profile() {
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`;
     if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)}d`;
     return tweetTime.toLocaleDateString();
+  };
+
+  // Avatar upload handler
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setAvatarUploading(true);
+    const formData = new FormData();
+    formData.append("avatar", file);
+
+    const token = localStorage.getItem("token");
+    const res = await fetch("http://localhost:8000/api/v1/users/update-avatar", {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+    const data = await res.json();
+    setAvatarUploading(false);
+    if (res.ok) {
+      setUser(data.user);
+      localStorage.setItem("user", JSON.stringify(data.user));
+    } else {
+      alert(data.message || "Failed to update avatar");
+    }
+  };
+
+  // Cover image upload handler
+  const handleCoverChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setCoverUploading(true);
+    const formData = new FormData();
+    formData.append("coverImage", file);
+
+    const token = localStorage.getItem("token");
+    const res = await fetch("http://localhost:8000/api/v1/users/update-cover", {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+    const data = await res.json();
+    setCoverUploading(false);
+    if (res.ok) {
+      setUser(data.user);
+      localStorage.setItem("user", JSON.stringify(data.user));
+    } else {
+      alert(data.message || "Failed to update cover image");
+    }
   };
 
   if (isLoading) {
@@ -146,7 +202,28 @@ function Profile() {
                 className="w-full h-full object-cover object-center"
               />
             ) : (
-              <div className="bg-gray-700"></div>
+              <div className="bg-gray-700 w-full h-full"></div>
+            )}
+            {/* Cover upload button */}
+            <button
+              className="absolute top-[80%] right-[1%] bg-black/60 p-2 rounded-full hover:bg-black/80"
+              onClick={() => coverInputRef.current.click()}
+              disabled={coverUploading}
+              title="Change cover image"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <input
+                type="file"
+                accept="image/*"
+                ref={coverInputRef}
+                onChange={handleCoverChange}
+                className="hidden"
+              />
+            </button>
+            {coverUploading && (
+              <div className="absolute top-2 left-2 text-xs text-blue-400">Uploading...</div>
             )}
           </div>
         </div>
@@ -166,6 +243,27 @@ function Profile() {
                 <span className="text-4xl font-bold">
                   {user?.name?.charAt(0) || "U"}
                 </span>
+              )}
+              {/* Avatar upload button */}
+              <button
+                className="absolute bottom-2 right-2 bg-black/60 p-2 rounded-full hover:bg-black/80"
+                onClick={() => avatarInputRef.current.click()}
+                disabled={avatarUploading}
+                title="Change profile image"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={avatarInputRef}
+                  onChange={handleAvatarChange}
+                  className="hidden"
+                />
+              </button>
+              {avatarUploading && (
+                <div className="absolute bottom-2 left-2 text-xs text-blue-400">Uploading...</div>
               )}
             </div>
             <div className="flex gap-2 mt-2">

@@ -16,10 +16,13 @@ function Settings() {
   const [profileData, setProfileData] = useState({
     name: "",
     username: "",
+    email: "",
     bio: "",
     location: "",
-    website: "",
+    profession: "",
   });
+  const [profileMessage, setProfileMessage] = useState("");
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [notifLoading, setNotifLoading] = useState(false);
   const [browserPermission, setBrowserPermission] = useState("default");
@@ -40,12 +43,11 @@ function Settings() {
       setProfileData({
         name: userInfo.name || "",
         username: userInfo.username || "",
+        email: userInfo.email || "",
         bio: userInfo.bio || "",
         location: userInfo.location || "",
-        website: userInfo.website || "",
+        profession: userInfo.profession || "",
       });
-      
-      // Fixed: Properly handle the notification setting with explicit boolean check
       setNotificationsEnabled(userInfo.notificationsEnabled === true);
     }
 
@@ -109,7 +111,7 @@ function Settings() {
       }
     } catch (error) {
       setPasswordMessage("Error changing password. Please try again.");
-      console.error(error)
+      console.error(error);
     } finally {
       setIsChangingPassword(false);
     }
@@ -117,7 +119,41 @@ function Settings() {
 
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
-    
+    setProfileMessage("");
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        "http://localhost:8000/api/v1/users/profile",
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(profileData),
+        }
+      );
+      const data = await response.json();
+      if (response.ok) {
+        setProfileMessage("Profile updated successfully.");
+        setProfileData({
+          name: data.user.name,
+          username: data.user.username,
+          email: data.user.email,
+          bio: data.user.bio,
+          location: data.user.location,
+          profession: data.user.profession,
+        });
+        // Update localStorage
+        localStorage.setItem("user", JSON.stringify(data.user));
+      } else {
+        setProfileMessage(data.message || "Failed to update profile");
+      }
+    } catch (error) {
+      setProfileMessage("An error occurred. Please try again.");
+      console.error(error);
+    }
   };
 
   const requestBrowserPermission = async () => {
@@ -138,38 +174,42 @@ function Settings() {
 
   const handleNotificationToggle = async () => {
     const newValue = !notificationsEnabled;
-    
-    console.log("🔄 Toggle clicked:", { 
-      currentValue: notificationsEnabled, 
-      newValue, 
-      browserPermission 
+
+    console.log("🔄 Toggle clicked:", {
+      currentValue: notificationsEnabled,
+      newValue,
+      browserPermission,
     });
-    
+
     // If user is trying to enable notifications
     if (newValue) {
       // Check browser permission first
       if (browserPermission === "denied") {
-        alert("Browser notifications are blocked. Please enable them in your browser settings.");
+        alert(
+          "Browser notifications are blocked. Please enable them in your browser settings."
+        );
         return;
       }
-      
+
       if (browserPermission === "default") {
         // Request permission first
         const granted = await requestBrowserPermission();
         if (!granted) {
-          alert("Browser notification permission is required to enable notifications.");
+          alert(
+            "Browser notification permission is required to enable notifications."
+          );
           return;
         }
       }
     }
-    
+
     // Update state immediately for better UX
     setNotificationsEnabled(newValue);
     setNotifLoading(true);
-    
+
     try {
       const token = localStorage.getItem("token");
-  
+
       const response = await fetch(
         "http://localhost:8000/api/v1/users/notifications",
         {
@@ -181,25 +221,34 @@ function Settings() {
           body: JSON.stringify({ notificationsEnabled: newValue }),
         }
       );
-      
+
       const data = await response.json();
-      
+
       if (response.ok) {
-        const finalValue = data.notificationsEnabled !== undefined ? data.notificationsEnabled : newValue;        
+        const finalValue =
+          data.notificationsEnabled !== undefined
+            ? data.notificationsEnabled
+            : newValue;
         setNotificationsEnabled(finalValue);
-        
+
         // Updating localStorage
         const userData = JSON.parse(localStorage.getItem("user") || "{}");
         userData.notificationsEnabled = finalValue;
-        localStorage.setItem("user", JSON.stringify(userData));        
+        localStorage.setItem("user", JSON.stringify(userData));
       } else {
         setNotificationsEnabled(!newValue);
         console.error("Failed to update notification settings:", data);
-        alert(`Failed to update notification settings: ${data.message || 'Unknown error'}`);
+        alert(
+          `Failed to update notification settings: ${
+            data.message || "Unknown error"
+          }`
+        );
       }
     } catch (error) {
       setNotificationsEnabled(!newValue);
-      alert("Error updating notification settings. Please check your connection and try again.");
+      alert(
+        "Error updating notification settings. Please check your connection and try again."
+      );
     } finally {
       setNotifLoading(false);
     }
@@ -356,7 +405,11 @@ function Settings() {
 
           {/* Settings Content */}
           <div className="flex-1 p-6">
-            {activeSection === "home" && (() => { navigate("/"); return null; })()}
+            {activeSection === "home" &&
+              (() => {
+                navigate("/");
+                return null;
+              })()}
             {activeSection === "account" && (
               <div className="space-y-6">
                 <div>
@@ -410,6 +463,23 @@ function Settings() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-2">
+                        {t("email")}
+                      </label>
+                      <input
+                        type="email"
+                        value={profileData.email}
+                        onChange={(e) =>
+                          setProfileData({
+                            ...profileData,
+                            email: e.target.value,
+                          })
+                        }
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
+                        placeholder="debasis@outlook.com"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
                         {t("bio")}
                       </label>
                       <textarea
@@ -444,27 +514,39 @@ function Settings() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-2">
-                        {t("website")}
+                        {t("profession")}
                       </label>
                       <input
-                        type="url"
-                        value={profileData.website}
+                        type="text"
+                        value={profileData.profession}
                         onChange={(e) =>
                           setProfileData({
                             ...profileData,
-                            website: e.target.value,
+                            profession: e.target.value,
                           })
                         }
                         className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
-                        placeholder="https://your-website.com"
+                        placeholder="Software developer/Programmer/Software engineer"
                       />
                     </div>
                     <button
+                      onClick={handleProfileUpdate}
                       type="submit"
-                      className="bg-blue-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-600 transition-colors"
+                      className="cursor-pointer bg-blue-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-600 transition-colors"
                     >
                       {t("save_changes")}
                     </button>
+                    {profileMessage && (
+                      <div
+                        className={`mb-4 text-sm font-medium ${
+                          profileMessage.includes("success")
+                            ? "text-green-400"
+                            : "text-red-400"
+                        }`}
+                      >
+                        {profileMessage}
+                      </div>
+                    )}
                   </form>
                 </div>
 
@@ -522,7 +604,9 @@ function Settings() {
 
                 {/* Change Password */}
                 <div className="bg-gray-900 rounded-xl p-6">
-                  <h3 className="text-lg font-bold mb-4">{t("change_password")}</h3>
+                  <h3 className="text-lg font-bold mb-4">
+                    {t("change_password")}
+                  </h3>
                   <form onSubmit={handlePasswordChange} className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium mb-2">
@@ -601,25 +685,39 @@ function Settings() {
             {activeSection === "notifications" && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-2xl font-bold mb-2">{t("notifications")}</h2>
+                  <h2 className="text-2xl font-bold mb-2">
+                    {t("notifications")}
+                  </h2>
                   <p className="text-gray-400 mb-6">
                     {t("notifications_description")}
                   </p>
                 </div>
 
                 <div className="bg-gray-900 rounded-xl p-6 mb-6">
-                  <h3 className="text-lg font-bold mb-4">{t("browser_notifications")}</h3>
-                  
+                  <h3 className="text-lg font-bold mb-4">
+                    {t("browser_notifications")}
+                  </h3>
+
                   {/* Browser Permission Status */}
                   <div className="mb-4 p-3 bg-gray-800 rounded-lg">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-300">Browser Permission:</span>
-                      <span className={`text-sm font-medium ${
-                        browserPermission === "granted" ? "text-green-400" :
-                        browserPermission === "denied" ? "text-red-400" : "text-yellow-400"
-                      }`}>
-                        {browserPermission === "granted" ? "Granted" :
-                         browserPermission === "denied" ? "Blocked" : "Not Requested"}
+                      <span className="text-sm text-gray-300">
+                        Browser Permission:
+                      </span>
+                      <span
+                        className={`text-sm font-medium ${
+                          browserPermission === "granted"
+                            ? "text-green-400"
+                            : browserPermission === "denied"
+                            ? "text-red-400"
+                            : "text-yellow-400"
+                        }`}
+                      >
+                        {browserPermission === "granted"
+                          ? "Granted"
+                          : browserPermission === "denied"
+                          ? "Blocked"
+                          : "Not Requested"}
                       </span>
                     </div>
                   </div>
@@ -643,7 +741,8 @@ function Settings() {
                   {browserPermission === "denied" && (
                     <div className="mb-4 p-3 bg-red-900/20 border border-red-800 rounded-lg">
                       <p className="text-red-400 text-sm">
-                        Notifications are blocked in your browser. To enable them:
+                        Notifications are blocked in your browser. To enable
+                        them:
                       </p>
                       <ul className="text-red-300 text-xs mt-2 ml-4 list-disc">
                         <li>Click the lock icon in your address bar</li>
@@ -656,7 +755,9 @@ function Settings() {
                   {/* Main Toggle */}
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-white font-medium">{t("enable_browser_notifications")}</span>
+                      <span className="text-white font-medium">
+                        {t("enable_browser_notifications")}
+                      </span>
                       <p className="text-sm text-gray-400 mt-1">
                         Get notified when tweets contain "cricket" or "science"
                       </p>
@@ -666,7 +767,11 @@ function Settings() {
                         type="button"
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 ${
                           notificationsEnabled ? "bg-blue-600" : "bg-gray-600"
-                        } ${!canToggle() ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                        } ${
+                          !canToggle()
+                            ? "opacity-50 cursor-not-allowed"
+                            : "cursor-pointer"
+                        }`}
                         onClick={handleNotificationToggle}
                         disabled={!canToggle()}
                         aria-pressed={notificationsEnabled}
@@ -674,12 +779,20 @@ function Settings() {
                       >
                         <span
                           className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                            notificationsEnabled ? "translate-x-5" : "translate-x-1"
+                            notificationsEnabled
+                              ? "translate-x-5"
+                              : "translate-x-1"
                           }`}
                         />
                       </button>
-                      <span className={`ml-3 text-sm ${getNotificationStatus().color}`}>
-                        {notifLoading ? "Loading..." : getNotificationStatus().text}
+                      <span
+                        className={`ml-3 text-sm ${
+                          getNotificationStatus().color
+                        }`}
+                      >
+                        {notifLoading
+                          ? "Loading..."
+                          : getNotificationStatus().text}
                       </span>
                     </div>
                   </div>

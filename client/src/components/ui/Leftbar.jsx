@@ -61,24 +61,6 @@ function Leftbar() {
             <span className="text-xl font-normal">{t("home")}</span>
           </Link>
 
-          {/* Search */}
-          <div className="flex items-center space-x-4 p-3 rounded-full hover:bg-gray-900 cursor-pointer">
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-            <span className="text-xl font-normal">{t("search")}</span>
-          </div>
-
           {/* Profile */}
           <Link
             to="/profile"

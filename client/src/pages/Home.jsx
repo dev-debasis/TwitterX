@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { getTranslation } from "../api/translateApi.js";
 import { handleTweetNotification } from "../utils/notificationUtils.js";
 
+
 function Home() {
   const { t, i18n } = useTranslation();
   const [tweets, setTweets] = useState([]);
@@ -816,7 +817,6 @@ function Home() {
             </div>
           )}
         </div>
-
         {/* Premium, Promo, and Footer */}
         <div className="bg-gray-900 rounded-2xl p-4">
           <h2 className="text-xl font-bold mb-2">
