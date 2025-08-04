@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useGoogleLogin } from "@react-oauth/google";
-import { googleAuth } from "../../api/GoogleApi.js";
+import { googleAuth } from "../../api/googleApi.js";
 
 function GoogleLogin() {
   const [errorMsg, setErrorMsg] = useState("");
