@@ -39,7 +39,7 @@ function LanguageSwitcher({ user, onLanguageChange }) {
         return;
       }
       const res = await axios.post(
-        "http://localhost:8000/api/v1/language/request-change",
+        "https://twitterx-b7xc.onrender.com/api/v1/language/request-change",
         { language: lang },
         {
           headers: {
@@ -126,7 +126,7 @@ function LanguageSwitcher({ user, onLanguageChange }) {
             setShowPhone(false);
             try {
               const token = localStorage.getItem("token");
-              const res = await axios.get("http://localhost:8000/api/v1/users/profile", {
+              const res = await axios.get("https://twitterx-b7xc.onrender.com/api/v1/users/profile", {
                 headers: { Authorization: `Bearer ${token}` }
               });
               const updatedUser = res.data.user;

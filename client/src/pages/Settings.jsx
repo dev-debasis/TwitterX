@@ -80,7 +80,7 @@ function Settings() {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        "http://localhost:8000/api/v1/users/change-password",
+        "https://twitterx-b7xc.onrender.com/api/v1/users/change-password",
         {
           method: "PATCH",
           headers: {
@@ -122,7 +122,7 @@ function Settings() {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        "http://localhost:8000/api/v1/users/profile",
+        "https://twitterx-b7xc.onrender.com/api/v1/users/profile",
         {
           method: "PATCH",
           headers: {
@@ -206,7 +206,7 @@ function Settings() {
       const token = localStorage.getItem("token");
 
       const response = await fetch(
-        "http://localhost:8000/api/v1/users/notifications",
+        "https://twitterx-b7xc.onrender.com/api/v1/users/notifications",
         {
           method: "PATCH",
           headers: {

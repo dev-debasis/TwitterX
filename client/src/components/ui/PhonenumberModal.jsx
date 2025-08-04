@@ -17,7 +17,7 @@ const PhonenumberModal = ({ onSuccess, onClose }) => {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
-        "http://localhost:8000/api/v1/users/update-phone",
+        "https://twitterx-b7xc.onrender.com/api/v1/users/update-phone",
         { phoneNumber: phone },
         { headers: { Authorization: `Bearer ${token}` } }
       );

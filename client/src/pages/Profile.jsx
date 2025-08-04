@@ -35,7 +35,7 @@ function Profile() {
   const fetchUserTweets = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:8000/api/v1/tweets", {
+      const response = await fetch("https://twitterx-b7xc.onrender.com/api/v1/tweets", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -85,7 +85,7 @@ function Profile() {
     formData.append("avatar", file);
 
     const token = localStorage.getItem("token");
-    const res = await fetch("http://localhost:8000/api/v1/users/update-avatar", {
+    const res = await fetch("https://twitterx-b7xc.onrender.com/api/v1/users/update-avatar", {
       method: "PATCH",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -110,7 +110,7 @@ function Profile() {
     formData.append("coverImage", file);
 
     const token = localStorage.getItem("token");
-    const res = await fetch("http://localhost:8000/api/v1/users/update-cover", {
+    const res = await fetch("https://twitterx-b7xc.onrender.com/api/v1/users/update-cover", {
       method: "PATCH",
       headers: {
         Authorization: `Bearer ${token}`,

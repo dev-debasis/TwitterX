@@ -45,7 +45,7 @@ function OTPModal({ language, otpType, onSuccess, onClose }) {
       const token = localStorage.getItem("token");
       
       const res = await axios.post(
-        "http://localhost:8000/api/v1/language/verify-change",
+        "https://twitterx-b7xc.onrender.com/api/v1/language/verify-change",
         { otp: otp.trim() },
         { 
           headers: { 
@@ -74,7 +74,7 @@ function OTPModal({ language, otpType, onSuccess, onClose }) {
       const token = localStorage.getItem("token");
       
       await axios.post(
-        "http://localhost:8000/api/v1/language/request-change",
+        "https://twitterx-b7xc.onrender.com/api/v1/language/request-change",
         { language },
         { 
           headers: { 
