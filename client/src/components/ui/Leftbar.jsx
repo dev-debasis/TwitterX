@@ -13,11 +13,6 @@ function Leftbar() {
     if (userData) {
       const parsedUser = JSON.parse(userData);
       setUser(parsedUser);
-
-      // Set language from user preference
-      if (parsedUser.language) {
-        // Don't import i18n here, use useTranslation hook instead
-      }
     }
   }, []);
 
@@ -28,7 +23,6 @@ function Leftbar() {
   };
 
   const handleLanguageChange = (newLanguage) => {
-    // Update local user state
     if (user) {
       setUser({ ...user, language: newLanguage });
     }

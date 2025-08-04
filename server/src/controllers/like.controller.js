@@ -12,11 +12,9 @@ const likeTweet = async (req, res) => {
     const alreadyLiked = tweet.likedBy.includes(userId);
 
     if (alreadyLiked) {
-      // Remove like
       tweet.likedBy.pull(userId);
       tweet.likeCounts = Math.max(0, tweet.likeCounts - 1);
     } else {
-      // Add like
       tweet.likedBy.push(userId);
       tweet.likeCounts = (tweet.likeCounts || 0) + 1;
     }

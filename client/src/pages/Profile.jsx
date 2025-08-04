@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Leftbar from "../components/ui/Leftbar.jsx";
 import { useTranslation } from "react-i18next";
+import TwitterTimeline from "../components/widget/Timeline.jsx";
 
 function Profile() {
   const { t } = useTranslation();
@@ -9,7 +10,6 @@ function Profile() {
   const [userTweets, setUserTweets] = useState([]);
   const [activeTab, setActiveTab] = useState("posts");
   const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [coverUploading, setCoverUploading] = useState(false);
   const avatarInputRef = useRef();
@@ -77,7 +77,6 @@ function Profile() {
     return tweetTime.toLocaleDateString();
   };
 
-  // Avatar upload handler
   const handleAvatarChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -103,7 +102,6 @@ function Profile() {
     }
   };
 
-  // Cover image upload handler
   const handleCoverChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -223,7 +221,7 @@ function Profile() {
               />
             </button>
             {coverUploading && (
-              <div className="absolute top-2 left-2 text-xs text-blue-400">Uploading...</div>
+              <div className="absolute top-[50%] left-[50%] text-xs text-blue-400">Uploading...</div>
             )}
           </div>
         </div>
@@ -263,7 +261,7 @@ function Profile() {
                 />
               </button>
               {avatarUploading && (
-                <div className="absolute bottom-2 left-2 text-xs text-blue-400">Uploading...</div>
+                <div className="absolute top-[50%] left-[50%] text-xs text-blue-400">Uploading...</div>
               )}
             </div>
             <div className="flex gap-2 mt-2">
@@ -436,15 +434,25 @@ function Profile() {
                               {formatTime(tweet.createdAt)}
                             </span>
                           </div>
-                          <p className="text-white whitespace-pre-wrap">
+                          <p className="text-white whitespace-pre-wrap mb-3">
                             {tweet.content}
                           </p>
                           {tweet.image && (
-                            <img
-                              src={tweet.image}
-                              alt="Tweet image"
-                              className="rounded-2xl max-w-full mt-3"
-                            />
+                            <div className="mb-3">
+                              <div className="relative max-w-lg">
+                                <div className="aspect-[16/9] bg-gray-900 rounded-2xl overflow-hidden border border-gray-800">
+                                  <img
+                                    src={tweet.image}
+                                    alt="Tweet image"
+                                    className="w-full h-full object-cover cursor-pointer hover:brightness-95 transition-all"
+                                    onClick={() => {
+                                      // Optional: Add image modal/lightbox functionality here
+                                      window.open(tweet.image, '_blank');
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -464,153 +472,12 @@ function Profile() {
         </div>
       </div>
       {/* Right Sidebar */}
-      <div className="w-80 fixed right-0 h-full p-4 space-y-4">
-        {/* Search */}
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg
-              className="h-5 w-5 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-          </div>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-gray-900 border border-gray-800 rounded-full py-3 pl-10 pr-4 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
-            placeholder="Search"
-          />
-        </div>
-
-        {/* You might like */}
-        <div className="bg-gray-900 rounded-2xl p-4">
-          <h2 className="text-xl font-bold mb-4">You might like</h2>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-orange-400 to-red-500 rounded-full flex items-center justify-center">
-                  <span className="text-sm font-bold">D</span>
-                </div>
-                <div>
-                  <div className="font-bold text-sm">Debasis Khamari</div>
-                  <div className="text-gray-500 text-xs">@debasis-khamari-</div>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-pink-400 to-purple-500 rounded-full flex items-center justify-center">
-                  <span className="text-sm font-bold">E</span>
-                </div>
-                <div>
-                  <div className="font-bold text-sm">Debasis Khamari</div>
-                  <div className="text-gray-500 text-xs">@debasis-khamari-</div>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center">
-                  <span className="text-sm font-bold">B</span>
-                </div>
-                <div>
-                  <div className="font-bold text-sm flex items-center gap-1">
-                    Debasis Khamari
-                  </div>
-                  <div className="text-gray-500 text-xs">@debasis-khamari-</div>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center">
-                  <span className="text-sm font-bold">A</span>
-                </div>
-                <div>
-                  <div className="font-bold text-sm flex items-center gap-1">
-                    Debasis Khamari
-                  </div>
-                  <div className="text-gray-500 text-xs">@debasis-khamari-</div>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center">
-                  <span className="text-sm font-bold">S</span>
-                </div>
-                <div>
-                  <div className="font-bold text-sm flex items-center gap-1">
-                    Debasis Khamari
-                  </div>
-                  <div className="text-gray-500 text-xs">@debasis-khamari-</div>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center">
-                  <span className="text-sm font-bold">I</span>
-                </div>
-                <div>
-                  <div className="font-bold text-sm flex items-center gap-1">
-                    Debasis Khamari
-                  </div>
-                  <div className="text-gray-500 text-xs">@debasis-khamari-</div>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center">
-                  <span className="text-sm font-bold">S</span>
-                </div>
-                <div>
-                  <div className="font-bold text-sm flex items-center gap-1">
-                    Debasis Khamari
-                  </div>
-                  <div className="text-gray-500 text-xs">@debasis-khamari-</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="text-gray-500 text-xs space-y-1 px-4">
-          <div className="flex flex-wrap gap-2">
-            <a href="#" className="hover:underline">
-              Terms of Service
-            </a>
-            <a href="#" className="hover:underline">
-              Privacy Policy
-            </a>
-            <a href="#" className="hover:underline">
-              Cookie Policy
-            </a>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <a href="#" className="hover:underline">
-              Accessibility
-            </a>
-            <a href="#" className="hover:underline">
-              Ads info
-            </a>
-            <a href="#" className="hover:underline">
-              More
-            </a>
-          </div>
-          <div className="pt-2">© 2025 Debasis Khamari</div>
-        </div>
+      <div className="w-80 fixed right-0 h-full p-4 space-y-4 hidden lg:block">
+        <TwitterTimeline 
+          tweetIds={[
+            "1848827977901195488"          
+          ]}
+        />
       </div>
     </div>
   );

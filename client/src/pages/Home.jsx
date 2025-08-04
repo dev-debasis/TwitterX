@@ -4,7 +4,7 @@ import Leftbar from "../components/ui/Leftbar.jsx";
 import { useTranslation } from "react-i18next";
 import { getTranslation } from "../api/translateApi.js";
 import { handleTweetNotification } from "../utils/notificationUtils.js";
-
+import TwitterTimeline from "../components/widget/Timeline.jsx";
 
 function Home() {
   const { t, i18n } = useTranslation();
@@ -25,6 +25,9 @@ function Home() {
   const [replyTranslations, setReplyTranslations] = useState({});
   const [translatingTweet, setTranslatingTweet] = useState(null);
   const [translatingReply, setTranslatingReply] = useState(null);
+  const [tweetImage, setTweetImage] = useState(null);
+  const [tweetImagePreview, setTweetImagePreview] = useState("");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navigate = useNavigate();
 
@@ -43,6 +46,23 @@ function Home() {
     }
     fetchTweets();
   }, [navigate]);
+
+  useEffect(() => {
+    if (!window.twttr) {
+      const script = document.createElement("script");
+      script.src = "https://platform.twitter.com/widgets.js";
+      script.async = true;
+      script.charset = "utf-8";
+      script.onload = () => {
+        if (window.twttr && window.twttr.widgets) {
+          window.twttr.widgets.load();
+        }
+      };
+      document.head.appendChild(script);
+    } else {
+      window.twttr.widgets.load();
+    }
+  }, []);
 
   const fetchTweets = async () => {
     try {
@@ -96,34 +116,34 @@ function Home() {
 
   const handleTweetSubmit = async (e) => {
     e.preventDefault();
-    if (!newTweet.trim()) return;
+    if (!newTweet.trim() && !tweetImage) return;
 
     setIsLoading(true);
     try {
       const token = localStorage.getItem("token");
+      const formData = new FormData();
+      formData.append("content", newTweet);
+      if (tweetImage) formData.append("image", tweetImage);
+
       const response = await fetch("http://localhost:8000/api/v1/tweets", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ content: newTweet }),
+        body: formData,
       });
 
       if (response.ok) {
         const data = await response.json();
-
-        // Creating tweet object for notification
         const tweetForNotification = {
           _id: data.tweet?._id || Date.now(),
           content: newTweet,
           userId: user,
         };
-
-        // Handling notification using utility function
         handleTweetNotification(tweetForNotification);
-
         setNewTweet("");
+        setTweetImage(null);
+        setTweetImagePreview("");
         fetchTweets();
       }
     } catch (error) {
@@ -171,20 +191,24 @@ function Home() {
       if (response.ok) {
         const data = await response.json();
 
-        // Create reply object for notification (if it contains keywords)
-        const replyForNotification = {
-          _id: data.reply?._id || Date.now(),
-          content: replyContent,
-          userId: user,
+        const hydratedReply = {
+          ...data.reply,
+          userId: {
+            _id: user._id,
+            name: user.name,
+            username: user.username,
+            avatar: user.avatar,
+          },
         };
 
-        // Handle notification for reply using utility function
-        handleTweetNotification(replyForNotification);
+        setTweetReplies((prev) => ({
+          ...prev,
+          [tweetId]: prev[tweetId]
+            ? [hydratedReply, ...prev[tweetId]]
+            : [hydratedReply],
+        }));
 
         setReplyContent("");
-        fetchTweets();
-        setTweetReplies((prev) => ({ ...prev, [tweetId]: null }));
-        fetchReplies(tweetId);
       }
     } catch (error) {
       console.error(error);
@@ -296,12 +320,63 @@ function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white flex">
-      {/* Left Sidebar */}
-      <Leftbar />
+    <div className="min-h-screen bg-black text-white flex flex-col md:flex-row">
+      {/* Mobile Hamburger Button */}
+      <div className="md:hidden fixed top-4 left-4 z-50">
+        <button
+          onClick={() => setIsMobileMenuOpen(true)}
+          className="p-2 rounded-md bg-gray-800 text-white"
+        >
+          {/* Hamburger Icon */}
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 6h16M4 12h16M4 18h16"
+            />
+          </svg>
+        </button>
+      </div>
+
+      {/* Left Sidebar for desktop */}
+      <div className="hidden md:block">
+        <Leftbar />
+      </div>
+
+      {/* Mobile Sidebar Overlay */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 z-40 p-4 overflow-y-auto">
+          <button
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="absolute top-4 right-4 text-white"
+          >
+            {/* Close icon */}
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+          <Leftbar />
+        </div>
+      )}
 
       {/* Middle Content */}
-      <div className="flex-1 ml-64 mr-80">
+      <div className="flex-1 md:ml-64 md:mr-80 px-4 sm:px-6">
         {/* Header with tabs */}
         <div className="sticky top-0 bg-black/80 backdrop-blur-md border-b border-gray-800 z-50">
           <div className="flex-1 text-center py-4 border-b-2 border-blue-500">
@@ -335,11 +410,24 @@ function Home() {
                   rows="3"
                 />
                 <div className="flex items-center justify-between mt-3">
-                  <div className="flex items-center space-x-4 text-blue-400">
+                  <div className="flex items-center space-x-4 text-blue-400 relative">
                     {/* Tweet action buttons (icons only, no handlers) */}
-                    <button
-                      type="button"
-                      className="hover:bg-blue-900/20 p-2 rounded-full cursor-pointer"
+                    <input
+                      type="file"
+                      accept="image/*"
+                      id="tweet-image-input"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        setTweetImage(file);
+                        setTweetImagePreview(
+                          file ? URL.createObjectURL(file) : ""
+                        );
+                      }}
+                    />
+                    <label
+                      htmlFor="tweet-image-input"
+                      className="cursor-pointer hover:bg-blue-900/20 p-2 rounded-full"
                     >
                       <svg
                         className="w-5 h-5"
@@ -354,7 +442,43 @@ function Home() {
                           d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                         />
                       </svg>
-                    </button>
+                    </label>
+                    {tweetImagePreview && (
+                      <div className="mt-2 relative">
+                        <div className="relative w-full max-w-sm">
+                          <div className="aspect-[16/9] bg-gray-900 rounded-xl overflow-hidden border border-gray-700">
+                            <img
+                              src={tweetImagePreview}
+                              alt="Preview"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setTweetImage(null);
+                              setTweetImagePreview("");
+                            }}
+                            className="absolute top-2 right-2 bg-black/60 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-black/80 transition-colors"
+                            title="Remove image"
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M6 18L18 6M6 6l12 12"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    )}
                     <a
                       href="https://x.com/i/grok"
                       target="_blank"
@@ -370,24 +494,6 @@ function Home() {
                         <path d="M12.745 20.54l10.97-8.19c.539-.4 1.307-.244 1.564.38 1.349 3.288.746 7.241-1.938 9.955-2.683 2.714-6.417 3.31-9.83 1.954l-3.728 1.745c5.347 3.697 11.84 2.782 15.898-1.324 3.219-3.255 4.216-7.692 3.284-11.693l.008.009c-1.351-5.878.332-8.227 3.782-13.031L33 0l-4.54 4.59v-.014L12.743 20.544m-2.263 1.987c-3.837-3.707-3.175-9.446.1-12.755 2.42-2.449 6.388-3.448 9.852-1.979l3.72-1.737c-.67-.49-1.53-1.017-2.515-1.387-4.455-1.854-9.789-.931-13.41 2.728-3.483 3.523-4.579 8.94-2.697 13.561 1.405 3.454-.899 5.898-3.22 8.364C1.49 30.2.666 31.074 0 32l10.478-9.466" />
                       </svg>
                     </a>
-                    <button
-                      type="button"
-                      className="hover:bg-blue-900/20 p-2 rounded-full cursor-pointer"
-                    >
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M12 5a9 9 0 110 18 9 9 0 010-18z"
-                        />
-                      </svg>
-                    </button>
                   </div>
                   <button
                     type="submit"
@@ -448,11 +554,21 @@ function Home() {
                     </p>
 
                     {tweet.image && (
-                      <img
-                        src={tweet.image}
-                        alt="Tweet image"
-                        className="rounded-2xl max-w-full mb-3"
-                      />
+                      <div className="mb-3">
+                        <div className="relative max-w-lg">
+                          <div className="aspect-[16/9] bg-gray-900 rounded-2xl overflow-hidden border border-gray-800">
+                            <img
+                              src={tweet.image}
+                              alt="Tweet image"
+                              className="w-full h-full object-cover cursor-pointer hover:brightness-95 transition-all"
+                              onClick={() => {
+                                // Optional: Add image modal/lightbox functionality here
+                                window.open(tweet.image, "_blank");
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
                     )}
                     <div>
                       <button
@@ -536,6 +652,43 @@ function Home() {
                         <span className="text-sm">
                           {tweet.repliesCount || 0}
                         </span>
+                      </button>
+                      <button className="flex items-center space-x-2 text-gray-500 hover:text-green-400 group">
+                        <div className="p-2 rounded-full group-hover:bg-green-900/20">
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                            />
+                          </svg>
+                        </div>
+                        <span className="text-sm">
+                          {tweet.reTweetCount || 0}
+                        </span>
+                      </button>
+                      <button className="text-gray-500 hover:text-blue-400 group">
+                        <div className="p-2 rounded-full group-hover:bg-blue-900/20">
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
+                            />
+                          </svg>
+                        </div>
                       </button>
                     </div>
                     {/* Replies Section */}
@@ -671,8 +824,8 @@ function Home() {
         </div>
       </div>
 
-      {/* Right Sidebar with Search */}
-      <div className="w-80 fixed right-0 h-full p-4 space-y-4">
+      {/* Right Sidebar with Search and Twitter Embed */}
+      <div className="w-80 fixed right-0 h-full p-4 space-y-4 hidden lg:block">
         {/* Search Bar */}
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -817,61 +970,8 @@ function Home() {
             </div>
           )}
         </div>
-        {/* Premium, Promo, and Footer */}
-        <div className="bg-gray-900 rounded-2xl p-4">
-          <h2 className="text-xl font-bold mb-2">
-            {t("subscribe_to_premium")}
-          </h2>
-          <p className="text-gray-400 text-sm mb-3">
-            {t("premium_description")}
-          </p>
-          <button className="bg-blue-500 text-white px-6 py-2 rounded-full font-bold hover:bg-blue-600">
-            {t("subscribe")}
-          </button>
-        </div>
-        <div className="bg-gradient-to-br from-purple-900/50 to-blue-900/50 rounded-2xl p-4 border border-gray-800">
-          <div className="flex items-center mb-3">
-            <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-            <span className="text-xs text-gray-400">{t("promoted")}</span>
-          </div>
-          <h3 className="font-bold text-lg mb-2">{t("build_amazing_apps")}</h3>
-          <p className="text-gray-300 text-sm mb-3">
-            {t("coding_course_description")}
-          </p>
-          <div className="flex items-center justify-between">
-            <span className="text-blue-400 text-sm font-medium">
-              Learn More
-            </span>
-            <button className="bg-blue-500 text-white px-4 py-1 rounded-full text-sm hover:bg-blue-600">
-              {t("join_now")}
-            </button>
-          </div>
-        </div>
-        <div className="text-gray-500 text-xs space-y-1 px-4">
-          <div className="flex flex-wrap gap-2">
-            <a href="#" className="hover:underline">
-              Terms of Service
-            </a>
-            <a href="#" className="hover:underline">
-              Privacy Policy
-            </a>
-            <a href="#" className="hover:underline">
-              Cookie Policy
-            </a>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <a href="#" className="hover:underline">
-              Accessibility
-            </a>
-            <a href="#" className="hover:underline">
-              Ads info
-            </a>
-            <a href="#" className="hover:underline">
-              More
-            </a>
-          </div>
-          <div className="pt-2">© 2025 X Corp.</div>
-        </div>
+
+        <TwitterTimeline tweetIds={["1848829388747641049"]} />
       </div>
     </div>
   );

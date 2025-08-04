@@ -10,7 +10,6 @@ function OTPModal({ language, otpType, onSuccess, onClose }) {
   const [error, setError] = useState("");
   const [timer, setTimer] = useState(300); // 5 minutes
 
-  // Timer countdown effect
   useEffect(() => {
     if (timer <= 0) return;
     
@@ -27,7 +26,6 @@ function OTPModal({ language, otpType, onSuccess, onClose }) {
     return () => clearInterval(interval);
   }, [timer]);
 
-  // Format timer display
   const formatTimer = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -56,8 +54,8 @@ function OTPModal({ language, otpType, onSuccess, onClose }) {
           } 
         }
       );
+      console.log("Res: ", res);
 
-      // Success - call parent success handler
       onSuccess(language);
       
     } catch (err) {
@@ -75,7 +73,6 @@ function OTPModal({ language, otpType, onSuccess, onClose }) {
     try {
       const token = localStorage.getItem("token");
       
-      // Fix: Correct API endpoint URL
       await axios.post(
         "http://localhost:8000/api/v1/language/request-change",
         { language },
@@ -87,7 +84,6 @@ function OTPModal({ language, otpType, onSuccess, onClose }) {
         }
       );
 
-      // Reset timer and clear OTP input
       setTimer(300);
       setOTP("");
       
@@ -100,10 +96,10 @@ function OTPModal({ language, otpType, onSuccess, onClose }) {
   };
 
   const handleInputChange = (e) => {
-    const value = e.target.value.replace(/\D/g, ''); // Only allow digits
+    const value = e.target.value.replace(/\D/g, '');
     if (value.length <= 6) {
       setOTP(value);
-      if (error) setError(""); // Clear error when user starts typing
+      if (error) setError("");
     }
   };
 

@@ -1,18 +1,28 @@
 import { Tweet } from "../models/tweet.model.js";
+import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
 const createTweet = async (req, res) => {
   try {
     const { content } = req.body;
+    let imageUrl = "";
 
-    if (!content?.trim()) {
+    if (req.file) {
+      const uploadResult = await uploadOnCloudinary(req.file.path);
+      if (uploadResult && uploadResult.url) {
+        imageUrl = uploadResult.url;
+      }
+    }
+
+    if (!content?.trim() && !imageUrl) {
       return res.status(400).json({
-        message: "Tweet content is required.",
+        message: "Tweet content or image is required.",
       });
     }
 
     const tweet = await Tweet.create({
       userId: req.user._id,
-      content
+      content,
+      image: imageUrl,
     });
 
     return res.status(201).json({

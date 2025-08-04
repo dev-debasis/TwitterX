@@ -85,7 +85,6 @@ function LanguageSwitcher({ user, onLanguageChange }) {
     setPendingLang(null);
     setOtpType("");
     setError("");
-    // Reset select to current language
     setSelected(user?.language || i18n.language || "en");
   };
 
@@ -125,7 +124,6 @@ function LanguageSwitcher({ user, onLanguageChange }) {
         <PhoneModal
           onSuccess={async (savedPhone) => {
             setShowPhone(false);
-            // Fetch updated user from backend
             try {
               const token = localStorage.getItem("token");
               const res = await axios.get("http://localhost:8000/api/v1/users/profile", {

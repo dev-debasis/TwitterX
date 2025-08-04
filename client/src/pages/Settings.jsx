@@ -22,7 +22,6 @@ function Settings() {
     profession: "",
   });
   const [profileMessage, setProfileMessage] = useState("");
-  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [notifLoading, setNotifLoading] = useState(false);
   const [browserPermission, setBrowserPermission] = useState("default");
@@ -51,7 +50,6 @@ function Settings() {
       setNotificationsEnabled(userInfo.notificationsEnabled === true);
     }
 
-    // Check current browser notification permission
     if ("Notification" in window) {
       setBrowserPermission(Notification.permission);
     }
@@ -145,7 +143,6 @@ function Settings() {
           location: data.user.location,
           profession: data.user.profession,
         });
-        // Update localStorage
         localStorage.setItem("user", JSON.stringify(data.user));
       } else {
         setProfileMessage(data.message || "Failed to update profile");
@@ -181,9 +178,7 @@ function Settings() {
       browserPermission,
     });
 
-    // If user is trying to enable notifications
     if (newValue) {
-      // Check browser permission first
       if (browserPermission === "denied") {
         alert(
           "Browser notifications are blocked. Please enable them in your browser settings."

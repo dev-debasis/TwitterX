@@ -9,7 +9,6 @@ const PhonenumberModal = ({ onSuccess, onClose }) => {
   const handleSave = async (e) => {
     e.preventDefault();
     setError("");
-    // Basic phone validation (you can improve this)
     if (!/^\+?\d{10,15}$/.test(phone)) {
       setError("Please enter a valid phone number with country code.");
       return;
