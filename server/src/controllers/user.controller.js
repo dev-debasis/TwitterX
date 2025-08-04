@@ -193,7 +193,7 @@ const updateProfile = async (req, res) => {
 
 const updateAvatar = async (req, res) => {
   try {
-    const avatarLocalPath = req.file?.path;
+    const avatarLocalPath = req.file?.buffer;
 
     if (!avatarLocalPath) {
       return res.status(400).json({
@@ -233,7 +233,7 @@ const updateAvatar = async (req, res) => {
 
 const updateCoverImage = async (req, res) => {
   try {
-    const coverImageLocalPath = req.file?.path;
+    const coverImageLocalPath = req.file?.buffer;
 
     if (!coverImageLocalPath) {
       return res.status(400).json({

@@ -7,7 +7,7 @@ const createTweet = async (req, res) => {
     let imageUrl = "";
 
     if (req.file) {
-      const uploadResult = await uploadOnCloudinary(req.file.path);
+      const uploadResult = await uploadOnCloudinary(req.file.buffer);
       if (uploadResult && uploadResult.url) {
         imageUrl = uploadResult.url;
       }
