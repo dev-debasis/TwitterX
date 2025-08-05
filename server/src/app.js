@@ -10,7 +10,7 @@ import languageRouter from "./routes/language.route.js"
 const app = express()
 
 app.use(cors({
-    origin: process.env.DEV_CORS_ORIGIN,
+    origin: process.env.CORS_ORIGIN,
     credentials: true
 }))
 app.use(urlencoded({
