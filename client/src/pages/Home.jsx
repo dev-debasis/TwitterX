@@ -85,7 +85,7 @@ function Home() {
 
   const fetchTweets = async () => {
     try {
-      const response = await fetch("http://localhost:8000/api/v1/tweets");
+      const response = await fetch("https://twitterx-b7xc.onrender.com/api/v1/tweets");
       const data = await response.json();
       if (response.ok) {
         setTweets(data.tweets || []);
@@ -103,7 +103,7 @@ function Home() {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:8000/api/v1/tweets/replies/${tweetId}`,
+        `https://twitterx-b7xc.onrender.com/api/v1/tweets/replies/${tweetId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -144,7 +144,7 @@ function Home() {
       formData.append("content", newTweet);
       if (tweetImage) formData.append("image", tweetImage);
 
-      const response = await fetch("http://localhost:8000/api/v1/tweets", {
+      const response = await fetch("https://twitterx-b7xc.onrender.com/api/v1/tweets", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -176,7 +176,7 @@ function Home() {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:8000/api/v1/tweets/like/${tweetId}`,
+        `https://twitterx-b7xc.onrender.com/api/v1/tweets/like/${tweetId}`,
         {
           method: "PATCH",
           headers: {
@@ -197,7 +197,7 @@ function Home() {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:8000/api/v1/tweets/reply/${tweetId}`,
+        `https://twitterx-b7xc.onrender.com/api/v1/tweets/reply/${tweetId}`,
         {
           method: "POST",
           headers: {
@@ -251,7 +251,7 @@ function Home() {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:8000/api/v1/users/search?searchQuery=${encodeURIComponent(
+        `https://twitterx-b7xc.onrender.com/api/v1/users/search?searchQuery=${encodeURIComponent(
           query
         )}`,
         {
