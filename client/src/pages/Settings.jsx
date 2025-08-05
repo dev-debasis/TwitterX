@@ -343,7 +343,7 @@ function Settings() {
   ];
 
   return (
-    <div className="min-h-screen bg-black text-white flex">
+    <div className="min-h-screen bg-black text-white flex flex-col md:flex-row">
       {/* Main Settings Content */}
       <div className="flex-1 ">
         {/* Header */}
@@ -368,7 +368,7 @@ function Settings() {
               </svg>
             </button>
             <div>
-              <h1 className="text-xl font-bold">{t("settings")}</h1>
+              <h1 className="text-xl sm:text-2xl font-bold">{t("settings")}</h1>
               <p className="text-gray-500 text-sm">
                 Manage your account settings and preferences
               </p>
@@ -376,12 +376,14 @@ function Settings() {
           </div>
         </div>
 
-        <div className="flex">
+        <div className="w-full md:w-80 border-r border-gray-800 md:h-screen overflow-y-auto">
           {/* Settings Navigation */}
-          <div className="w-80 border-r border-gray-800 h-screen overflow-y-auto">
+          <div className="w-full md:w-80 border-b md:border-r border-gray-800 md:h-screen overflow-x-auto md:overflow-y-auto bg-black">
+            {" "}
             <div className="p-4">
               <h2 className="text-lg font-bold mb-4">{t("settings")}</h2>
-              <div className="space-y-1">
+              <div className="p-2 md:p-4 flex md:block space-x-2 md:space-x-0 overflow-x-auto">
+                {" "}
                 {settingsOptions.map((option) => (
                   <button
                     key={option.id}
@@ -399,7 +401,7 @@ function Settings() {
           </div>
 
           {/* Settings Content */}
-          <div className="flex-1 p-6">
+          <div className="flex-1 p-4 sm:p-6">
             {activeSection === "home" &&
               (() => {
                 navigate("/");
@@ -421,7 +423,10 @@ function Settings() {
                   <h3 className="text-lg font-bold mb-4">
                     {t("profile_information")}
                   </h3>
-                  <form onSubmit={handleProfileUpdate} className="space-y-4">
+                  <form
+                    onSubmit={handleProfileUpdate}
+                    className="space-y-4 max-w-screen-sm mx-auto"
+                  >
                     <div>
                       <label className="block text-sm font-medium mb-2">
                         {t("display_name")}
@@ -565,7 +570,7 @@ function Settings() {
                         {t("logout")}
                       </button>
                     </div>
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                       <div>
                         <h4 className="font-medium">{t("delete_account")}</h4>
                         <p className="text-gray-400 text-sm">
@@ -695,7 +700,7 @@ function Settings() {
 
                   {/* Browser Permission Status */}
                   <div className="mb-4 p-3 bg-gray-800 rounded-lg">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                       <span className="text-sm text-gray-300">
                         Browser Permission:
                       </span>
