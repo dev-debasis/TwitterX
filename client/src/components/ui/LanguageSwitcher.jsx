@@ -24,20 +24,25 @@ function LanguageSwitcher({ user, onLanguageChange }) {
   const [otpType, setOtpType] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [localUser, setLocalUser] = useState(user);
 
   const handleChange = async (e) => {
     const lang = e.target.value;
     if (lang === selected) return;
     setLoading(true);
     setError("");
+    
     try {
       const token = localStorage.getItem("token");
-      if (!user.phoneNumber && lang !== "fr" && lang !== "en") {
+      const currentUser = localUser || user;
+      
+      if (!currentUser.phoneNumber && lang !== "fr" && lang !== "en") {
         setPendingLang(lang);
         setShowPhone(true);
         setLoading(false);
         return;
       }
+      
       const res = await axios.post(
         "https://twitterx-b7xc.onrender.com/api/v1/language/request-change",
         { language: lang },
@@ -124,27 +129,34 @@ function LanguageSwitcher({ user, onLanguageChange }) {
         <PhoneModal
           onSuccess={async (savedPhone) => {
             setShowPhone(false);
+            setPendingLang(null);
+            
             try {
               const token = localStorage.getItem("token");
               const res = await axios.get("https://twitterx-b7xc.onrender.com/api/v1/users/profile", {
                 headers: { Authorization: `Bearer ${token}` }
               });
               const updatedUser = res.data.user;
-              // Update localStorage and optionally parent state
+              
               localStorage.setItem("user", JSON.stringify(updatedUser));
+              setLocalUser(updatedUser);
+              
               if (typeof onLanguageChange === "function") {
                 onLanguageChange(updatedUser.language, updatedUser);
               }
-              // Now re-trigger the language change flow
-              handleChange({ target: { value: pendingLang || selected } });
+              
+              alert("Phone number saved successfully! You can now switch languages.");
+              
             } catch (err) {
-              console.log(err)
-              // fallback: just try the flow again
-              handleChange({ target: { value: pendingLang || selected } });
+              console.error("Error fetching updated user profile:", err);
+              const updatedLocalUser = { ...localUser, phoneNumber: savedPhone };
+              setLocalUser(updatedLocalUser);
+              alert("Phone number saved successfully! You can now switch languages.");
             }
           }}
           onClose={() => {
             setShowPhone(false);
+            setPendingLang(null);
             setSelected(user?.language || i18n.language || "en");
           }}
         />

@@ -8,7 +8,7 @@ function OTPModal({ language, otpType, onSuccess, onClose }) {
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [error, setError] = useState("");
-  const [timer, setTimer] = useState(300); // 5 minutes
+  const [timer, setTimer] = useState(300);
 
   useEffect(() => {
     if (timer <= 0) return;

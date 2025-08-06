@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import {
+  checkNotificationSupport,
+  requestNotificationPermission,
+  showInPageNotification,
+  showNotification,
+} from "../utils/notificationUtils.js";
 
 function Settings() {
   const { t } = useTranslation();
   const [user, setUser] = useState(null);
-  const [activeSection, setActiveSection] = useState("account");
+  const [activeSection, setActiveSection] = useState("notifications");
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -25,6 +31,7 @@ function Settings() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [notifLoading, setNotifLoading] = useState(false);
   const [browserPermission, setBrowserPermission] = useState("default");
+  const [notificationDebug, setNotificationDebug] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -52,6 +59,10 @@ function Settings() {
 
     if ("Notification" in window) {
       setBrowserPermission(Notification.permission);
+
+      const debugInfo = checkNotificationSupport();
+      setNotificationDebug(debugInfo);
+      console.log("Settings loaded with notification debug:", debugInfo);
     }
   }, [navigate]);
 
@@ -160,8 +171,12 @@ function Settings() {
     }
 
     try {
-      const permission = await Notification.requestPermission();
+      console.log("Requesting notification permission...");
+      const permission = await requestNotificationPermission();
       setBrowserPermission(permission);
+
+     
+
       return permission === "granted";
     } catch (error) {
       console.error("Error requesting notification permission:", error);
@@ -172,7 +187,7 @@ function Settings() {
   const handleNotificationToggle = async () => {
     const newValue = !notificationsEnabled;
 
-    console.log("🔄 Toggle clicked:", {
+    console.log("Toggle clicked:", {
       currentValue: notificationsEnabled,
       newValue,
       browserPermission,
@@ -181,13 +196,12 @@ function Settings() {
     if (newValue) {
       if (browserPermission === "denied") {
         alert(
-          "Browser notifications are blocked. Please enable them in your browser settings."
+          "Browser notifications are blocked. Please enable them in your browser settings and refresh the page."
         );
         return;
       }
 
       if (browserPermission === "default") {
-        // Request permission first
         const granted = await requestBrowserPermission();
         if (!granted) {
           alert(
@@ -198,13 +212,11 @@ function Settings() {
       }
     }
 
-    // Update state immediately for better UX
     setNotificationsEnabled(newValue);
     setNotifLoading(true);
 
     try {
       const token = localStorage.getItem("token");
-
       const response = await fetch(
         "https://twitterx-b7xc.onrender.com/api/v1/users/notifications",
         {
@@ -226,13 +238,30 @@ function Settings() {
             : newValue;
         setNotificationsEnabled(finalValue);
 
-        // Updating localStorage
         const userData = JSON.parse(localStorage.getItem("user") || "{}");
         userData.notificationsEnabled = finalValue;
         localStorage.setItem("user", JSON.stringify(userData));
+
+        if (finalValue && browserPermission === "granted") {
+          setTimeout(async () => {
+            const notification = await showNotification(
+              "🎉 Notifications Enabled!",
+              {
+                body: "You'll receive notifications for tweets containing 'cricket' or 'science'",
+                tag: "enable-success",
+              }
+            );
+
+            if (!notification) {
+              showInPageNotification(
+                "🎉 Notifications Enabled!",
+                "You'll receive notifications for tweets containing 'cricket' or 'science'"
+              );
+            }
+          }, 500);
+        }
       } else {
         setNotificationsEnabled(!newValue);
-        console.error("Failed to update notification settings:", data);
         alert(
           `Failed to update notification settings: ${
             data.message || "Unknown error"
@@ -241,9 +270,7 @@ function Settings() {
       }
     } catch (error) {
       setNotificationsEnabled(!newValue);
-      alert(
-        "Error updating notification settings. Please check your connection and try again."
-      );
+      alert("Error updating notification settings. Please try again.");
     } finally {
       setNotifLoading(false);
     }
@@ -343,463 +370,470 @@ function Settings() {
   ];
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col md:flex-row">
-      {/* Main Settings Content */}
-      <div className="flex-1 ">
-        {/* Header */}
-        <div className="sticky top-0 bg-black/80 backdrop-blur-md border-b border-gray-800 z-50">
-          <div className="flex items-center p-4">
-            <button
-              onClick={() => navigate("/")}
-              className="p-2 rounded-full hover:bg-gray-900 mr-4"
+    <div className="min-h-screen bg-black text-white">
+      {/* Header */}
+      <div className="sticky top-0 bg-black/80 backdrop-blur-md border-b border-gray-800 z-50">
+        <div className="flex items-center p-4">
+          <button
+            onClick={() => navigate("/")}
+            className="p-2 rounded-full hover:bg-gray-900 mr-4"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                />
-              </svg>
-            </button>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold">{t("settings")}</h1>
-              <p className="text-gray-500 text-sm">
-                Manage your account settings and preferences
-              </p>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              />
+            </svg>
+          </button>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold">{t("settings")}</h1>
+            <p className="text-gray-500 text-sm">
+              Manage your account settings and preferences
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex flex-col lg:flex-row">
+        {/* Navigation */}
+        <div className="w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-gray-800 bg-black">
+          <div className="p-4">
+            <div className="flex lg:flex-col space-x-2 lg:space-x-0 lg:space-y-2 overflow-x-auto lg:overflow-x-visible">
+              {settingsOptions.map((option) => (
+                <button
+                  key={option.id}
+                  onClick={() => setActiveSection(option.id)}
+                  className={`flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-900 transition-colors whitespace-nowrap lg:w-full ${
+                    activeSection === option.id ? "bg-gray-900" : ""
+                  }`}
+                >
+                  {option.icon}
+                  <span className="text-left">{t(option.title)}</span>
+                </button>
+              ))}
             </div>
           </div>
         </div>
 
-        <div className="w-full md:w-80 border-r border-gray-800 md:h-screen overflow-y-auto">
-          {/* Settings Navigation */}
-          <div className="w-full md:w-80 border-b md:border-r border-gray-800 md:h-screen overflow-x-auto md:overflow-y-auto bg-black">
-            {" "}
-            <div className="p-4">
-              <h2 className="text-lg font-bold mb-4">{t("settings")}</h2>
-              <div className="p-2 md:p-4 flex md:block space-x-2 md:space-x-0 overflow-x-auto">
-                {" "}
-                {settingsOptions.map((option) => (
+        {/* Content */}
+        <div className="flex-1 p-4 sm:p-6 lg:overflow-y-auto lg:max-h-screen">
+          {activeSection === "home" &&
+            (() => {
+              navigate("/");
+              return null;
+            })()}
+
+          {activeSection === "account" && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold mb-2">
+                  {t("account_information")}
+                </h2>
+                <p className="text-gray-400 mb-6">
+                  {t("account_info_description")}
+                </p>
+              </div>
+
+              {/* Profile Information */}
+              <div className="bg-gray-900 rounded-xl p-6">
+                <h3 className="text-lg font-bold mb-4">
+                  {t("profile_information")}
+                </h3>
+                <form
+                  onSubmit={handleProfileUpdate}
+                  className="space-y-4 max-w-screen-sm"
+                >
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      {t("display_name")}
+                    </label>
+                    <input
+                      type="text"
+                      value={profileData.name}
+                      onChange={(e) =>
+                        setProfileData({
+                          ...profileData,
+                          name: e.target.value,
+                        })
+                      }
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
+                      placeholder="Your display name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      {t("username")}
+                    </label>
+                    <input
+                      type="text"
+                      value={profileData.username}
+                      onChange={(e) =>
+                        setProfileData({
+                          ...profileData,
+                          username: e.target.value,
+                        })
+                      }
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
+                      placeholder="@username"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      {t("email")}
+                    </label>
+                    <input
+                      type="email"
+                      value={profileData.email}
+                      onChange={(e) =>
+                        setProfileData({
+                          ...profileData,
+                          email: e.target.value,
+                        })
+                      }
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
+                      placeholder="debasis@outlook.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      {t("bio")}
+                    </label>
+                    <textarea
+                      value={profileData.bio}
+                      onChange={(e) =>
+                        setProfileData({
+                          ...profileData,
+                          bio: e.target.value,
+                        })
+                      }
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
+                      rows="3"
+                      placeholder="Tell us about yourself"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      {t("location")}
+                    </label>
+                    <input
+                      type="text"
+                      value={profileData.location}
+                      onChange={(e) =>
+                        setProfileData({
+                          ...profileData,
+                          location: e.target.value,
+                        })
+                      }
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
+                      placeholder="Your location"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      {t("profession")}
+                    </label>
+                    <input
+                      type="text"
+                      value={profileData.profession}
+                      onChange={(e) =>
+                        setProfileData({
+                          ...profileData,
+                          profession: e.target.value,
+                        })
+                      }
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
+                      placeholder="Software developer/Programmer/Software engineer"
+                    />
+                  </div>
                   <button
-                    key={option.id}
-                    onClick={() => setActiveSection(option.id)}
-                    className={`w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-900 transition-colors ${
-                      activeSection === option.id ? "bg-gray-900" : ""
-                    }`}
+                    onClick={handleProfileUpdate}
+                    type="submit"
+                    className="cursor-pointer bg-blue-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-600 transition-colors"
                   >
-                    {option.icon}
-                    <span className="text-left">{t(option.title)}</span>
+                    {t("save_changes")}
                   </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Settings Content */}
-          <div className="flex-1 p-4 sm:p-6">
-            {activeSection === "home" &&
-              (() => {
-                navigate("/");
-                return null;
-              })()}
-            {activeSection === "account" && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-2xl font-bold mb-2">
-                    {t("account_information")}
-                  </h2>
-                  <p className="text-gray-400 mb-6">
-                    {t("account_info_description")}
-                  </p>
-                </div>
-
-                {/* Profile Information */}
-                <div className="bg-gray-900 rounded-xl p-6">
-                  <h3 className="text-lg font-bold mb-4">
-                    {t("profile_information")}
-                  </h3>
-                  <form
-                    onSubmit={handleProfileUpdate}
-                    className="space-y-4 max-w-screen-sm mx-auto"
-                  >
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        {t("display_name")}
-                      </label>
-                      <input
-                        type="text"
-                        value={profileData.name}
-                        onChange={(e) =>
-                          setProfileData({
-                            ...profileData,
-                            name: e.target.value,
-                          })
-                        }
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
-                        placeholder="Your display name"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        {t("username")}
-                      </label>
-                      <input
-                        type="text"
-                        value={profileData.username}
-                        onChange={(e) =>
-                          setProfileData({
-                            ...profileData,
-                            username: e.target.value,
-                          })
-                        }
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
-                        placeholder="@username"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        {t("email")}
-                      </label>
-                      <input
-                        type="email"
-                        value={profileData.email}
-                        onChange={(e) =>
-                          setProfileData({
-                            ...profileData,
-                            email: e.target.value,
-                          })
-                        }
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
-                        placeholder="debasis@outlook.com"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        {t("bio")}
-                      </label>
-                      <textarea
-                        value={profileData.bio}
-                        onChange={(e) =>
-                          setProfileData({
-                            ...profileData,
-                            bio: e.target.value,
-                          })
-                        }
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
-                        rows="3"
-                        placeholder="Tell us about yourself"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        {t("location")}
-                      </label>
-                      <input
-                        type="text"
-                        value={profileData.location}
-                        onChange={(e) =>
-                          setProfileData({
-                            ...profileData,
-                            location: e.target.value,
-                          })
-                        }
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
-                        placeholder="Your location"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        {t("profession")}
-                      </label>
-                      <input
-                        type="text"
-                        value={profileData.profession}
-                        onChange={(e) =>
-                          setProfileData({
-                            ...profileData,
-                            profession: e.target.value,
-                          })
-                        }
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
-                        placeholder="Software developer/Programmer/Software engineer"
-                      />
-                    </div>
-                    <button
-                      onClick={handleProfileUpdate}
-                      type="submit"
-                      className="cursor-pointer bg-blue-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-600 transition-colors"
+                  {profileMessage && (
+                    <div
+                      className={`mb-4 text-sm font-medium ${
+                        profileMessage.includes("success")
+                          ? "text-green-400"
+                          : "text-red-400"
+                      }`}
                     >
-                      {t("save_changes")}
-                    </button>
-                    {profileMessage && (
-                      <div
-                        className={`mb-4 text-sm font-medium ${
-                          profileMessage.includes("success")
-                            ? "text-green-400"
-                            : "text-red-400"
-                        }`}
-                      >
-                        {profileMessage}
-                      </div>
-                    )}
-                  </form>
-                </div>
-
-                {/* Danger Zone */}
-                <div className="bg-red-900/20 border border-red-800 rounded-xl p-6">
-                  <h3 className="text-lg font-bold mb-4 text-red-400">
-                    {t("danger_zone")}
-                  </h3>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium">{t("logout")}</h4>
-                        <p className="text-gray-400 text-sm">
-                          {t("sign_out_description")}
-                        </p>
-                      </div>
-                      <button
-                        onClick={handleLogout}
-                        className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
-                      >
-                        {t("logout")}
-                      </button>
-                    </div>
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                      <div>
-                        <h4 className="font-medium">{t("delete_account")}</h4>
-                        <p className="text-gray-400 text-sm">
-                          {t("delete_account_description")}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() =>
-                          alert("Account deletion feature coming soon")
-                        }
-                        className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
-                      >
-                        {t("delete_account")}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeSection === "privacy" && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-2xl font-bold mb-2">
-                    {t("privacy_and_safety")}
-                  </h2>
-                  <p className="text-gray-400 mb-6">
-                    {t("privacy_description")}
-                  </p>
-                </div>
-
-                {/* Change Password */}
-                <div className="bg-gray-900 rounded-xl p-6">
-                  <h3 className="text-lg font-bold mb-4">
-                    {t("change_password")}
-                  </h3>
-                  <form onSubmit={handlePasswordChange} className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        {t("current_password")}
-                      </label>
-                      <input
-                        type="password"
-                        value={passwordData.currentPassword}
-                        onChange={(e) =>
-                          setPasswordData({
-                            ...passwordData,
-                            currentPassword: e.target.value,
-                          })
-                        }
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        {t("new_password")}
-                      </label>
-                      <input
-                        type="password"
-                        value={passwordData.newPassword}
-                        onChange={(e) =>
-                          setPasswordData({
-                            ...passwordData,
-                            newPassword: e.target.value,
-                          })
-                        }
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        {t("confirm_new_password")}
-                      </label>
-                      <input
-                        type="password"
-                        value={passwordData.confirmPassword}
-                        onChange={(e) =>
-                          setPasswordData({
-                            ...passwordData,
-                            confirmPassword: e.target.value,
-                          })
-                        }
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
-                        required
-                      />
-                    </div>
-                    {passwordMessage && (
-                      <p
-                        className={`text-sm ${
-                          passwordMessage.includes("successfully")
-                            ? "text-green-400"
-                            : "text-red-400"
-                        }`}
-                      >
-                        {passwordMessage}
-                      </p>
-                    )}
-                    <button
-                      type="submit"
-                      disabled={isChangingPassword}
-                      className="bg-blue-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      {isChangingPassword ? "Changing..." : "Change Password"}
-                    </button>
-                  </form>
-                </div>
-              </div>
-            )}
-
-            {activeSection === "notifications" && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-2xl font-bold mb-2">
-                    {t("notifications")}
-                  </h2>
-                  <p className="text-gray-400 mb-6">
-                    {t("notifications_description")}
-                  </p>
-                </div>
-
-                <div className="bg-gray-900 rounded-xl p-6 mb-6">
-                  <h3 className="text-lg font-bold mb-4">
-                    {t("browser_notifications")}
-                  </h3>
-
-                  {/* Browser Permission Status */}
-                  <div className="mb-4 p-3 bg-gray-800 rounded-lg">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                      <span className="text-sm text-gray-300">
-                        Browser Permission:
-                      </span>
-                      <span
-                        className={`text-sm font-medium ${
-                          browserPermission === "granted"
-                            ? "text-green-400"
-                            : browserPermission === "denied"
-                            ? "text-red-400"
-                            : "text-yellow-400"
-                        }`}
-                      >
-                        {browserPermission === "granted"
-                          ? "Granted"
-                          : browserPermission === "denied"
-                          ? "Blocked"
-                          : "Not Requested"}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Request Permission Button*/}
-                  {browserPermission === "default" && (
-                    <div className="mb-4">
-                      <button
-                        onClick={requestBrowserPermission}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                      >
-                        Enable Browser Notifications
-                      </button>
-                      <p className="text-sm text-gray-400 mt-2">
-                        Click to allow notifications from this website
-                      </p>
+                      {profileMessage}
                     </div>
                   )}
+                </form>
+              </div>
 
-                  {/* Blocked Message */}
-                  {browserPermission === "denied" && (
-                    <div className="mb-4 p-3 bg-red-900/20 border border-red-800 rounded-lg">
-                      <p className="text-red-400 text-sm">
-                        Notifications are blocked in your browser. To enable
-                        them:
-                      </p>
-                      <ul className="text-red-300 text-xs mt-2 ml-4 list-disc">
-                        <li>Click the lock icon in your address bar</li>
-                        <li>Set notifications to "Allow"</li>
-                        <li>Refresh this page</li>
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Main Toggle */}
+              {/* Danger Zone */}
+              <div className="bg-red-900/20 border border-red-800 rounded-xl p-6">
+                <h3 className="text-lg font-bold mb-4 text-red-400">
+                  {t("danger_zone")}
+                </h3>
+                <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-white font-medium">
-                        {t("enable_browser_notifications")}
-                      </span>
-                      <p className="text-sm text-gray-400 mt-1">
-                        Get notified when tweets contain "cricket" or "science"
+                      <h4 className="font-medium">{t("logout")}</h4>
+                      <p className="text-gray-400 text-sm">
+                        {t("sign_out_description")}
                       </p>
                     </div>
-                    <div className="flex items-center">
-                      <button
-                        type="button"
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 ${
-                          notificationsEnabled ? "bg-blue-600" : "bg-gray-600"
-                        } ${
-                          !canToggle()
-                            ? "opacity-50 cursor-not-allowed"
-                            : "cursor-pointer"
-                        }`}
-                        onClick={handleNotificationToggle}
-                        disabled={!canToggle()}
-                        aria-pressed={notificationsEnabled}
-                        aria-label="Toggle browser notifications"
-                      >
-                        <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                            notificationsEnabled
-                              ? "translate-x-5"
-                              : "translate-x-1"
-                          }`}
-                        />
-                      </button>
-                      <span
-                        className={`ml-3 text-sm ${
-                          getNotificationStatus().color
-                        }`}
-                      >
-                        {notifLoading
-                          ? "Loading..."
-                          : getNotificationStatus().text}
-                      </span>
+                    <button
+                      onClick={handleLogout}
+                      className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                    >
+                      {t("logout")}
+                    </button>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                      <h4 className="font-medium">{t("delete_account")}</h4>
+                      <p className="text-gray-400 text-sm">
+                        {t("delete_account_description")}
+                      </p>
                     </div>
+                    <button
+                      onClick={() =>
+                        alert("Account deletion feature coming soon")
+                      }
+                      className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                    >
+                      {t("delete_account")}
+                    </button>
                   </div>
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
+
+          {activeSection === "privacy" && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold mb-2">
+                  {t("privacy_and_safety")}
+                </h2>
+                <p className="text-gray-400 mb-6">{t("privacy_description")}</p>
+              </div>
+
+              {/* Change Password */}
+              <div className="bg-gray-900 rounded-xl p-6">
+                <h3 className="text-lg font-bold mb-4">
+                  {t("change_password")}
+                </h3>
+                <form
+                  onSubmit={handlePasswordChange}
+                  className="space-y-4 max-w-screen-sm"
+                >
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      {t("current_password")}
+                    </label>
+                    <input
+                      type="password"
+                      value={passwordData.currentPassword}
+                      onChange={(e) =>
+                        setPasswordData({
+                          ...passwordData,
+                          currentPassword: e.target.value,
+                        })
+                      }
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      {t("new_password")}
+                    </label>
+                    <input
+                      type="password"
+                      value={passwordData.newPassword}
+                      onChange={(e) =>
+                        setPasswordData({
+                          ...passwordData,
+                          newPassword: e.target.value,
+                        })
+                      }
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      {t("confirm_new_password")}
+                    </label>
+                    <input
+                      type="password"
+                      value={passwordData.confirmPassword}
+                      onChange={(e) =>
+                        setPasswordData({
+                          ...passwordData,
+                          confirmPassword: e.target.value,
+                        })
+                      }
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
+                      required
+                    />
+                  </div>
+                  {passwordMessage && (
+                    <p
+                      className={`text-sm ${
+                        passwordMessage.includes("successfully")
+                          ? "text-green-400"
+                          : "text-red-400"
+                      }`}
+                    >
+                      {passwordMessage}
+                    </p>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={isChangingPassword}
+                    className="bg-blue-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {isChangingPassword ? "Changing..." : "Change Password"}
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {activeSection === "notifications" && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold mb-2">
+                  {t("notifications")}
+                </h2>
+                <p className="text-gray-400 mb-6">
+                  Manage your notification preferences
+                </p>
+              </div>
+
+              <div className="bg-gray-900 rounded-xl p-6 mb-6">
+                <h3 className="text-lg font-bold mb-4">
+                  Browser Notifications
+                </h3>
+
+                {/* Browser Permission Status */}
+                <div className="mb-4 p-3 bg-gray-800 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-300">
+                      Browser Permission:
+                    </span>
+                    <span
+                      className={`text-sm font-medium ${
+                        browserPermission === "granted"
+                          ? "text-green-400"
+                          : browserPermission === "denied"
+                          ? "text-red-400"
+                          : "text-yellow-400"
+                      }`}
+                    >
+                      {browserPermission === "granted"
+                        ? "Granted"
+                        : browserPermission === "denied"
+                        ? "Blocked"
+                        : "Not Requested"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Blocked Message */}
+                {browserPermission === "denied" && (
+                  <div className="mb-4 p-3 bg-red-900/20 border border-red-800 rounded-lg">
+                    <p className="text-red-400 text-sm mb-2">
+                      Notifications are blocked. To enable them:
+                    </p>
+                    <ol className="text-red-300 text-xs ml-4 list-decimal space-y-1">
+                      <li>Click the 🔒 or ℹ️ icon in your address bar</li>
+                      <li>Set "Notifications" to "Allow"</li>
+                      <li>Refresh this page</li>
+                    </ol>
+                  </div>
+                )}
+
+                {/* Main Toggle */}
+                <div className="flex items-center justify-between p-4 bg-gray-800 rounded-lg">
+                  <div>
+                    <span className="text-white font-medium">
+                      Tweet Notifications
+                    </span>
+                    <p className="text-sm text-gray-400 mt-1">
+                      Get notified for tweets containing "cricket" or "science"
+                    </p>
+                  </div>
+                  <div className="flex items-center">
+                    <button
+                      type="button"
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        notificationsEnabled ? "bg-blue-600" : "bg-gray-600"
+                      } ${
+                        !canToggle()
+                          ? "opacity-50 cursor-not-allowed"
+                          : "cursor-pointer"
+                      }`}
+                      onClick={handleNotificationToggle}
+                      disabled={!canToggle()}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          notificationsEnabled
+                            ? "translate-x-5"
+                            : "translate-x-1"
+                        }`}
+                      />
+                    </button>
+                    <span
+                      className={`ml-3 text-sm ${
+                        getNotificationStatus().color
+                      }`}
+                    >
+                      {notifLoading
+                        ? "Loading..."
+                        : getNotificationStatus().text}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Chrome-specific troubleshooting */}
+                {notificationDebug?.isChrome &&
+                  browserPermission === "granted" && (
+                    <div className="mt-4 p-3 bg-blue-900/20 border border-blue-800 rounded-lg">
+                      <h4 className="text-blue-400 text-sm font-medium mb-2">
+                        🔧 Chrome Troubleshooting:
+                      </h4>
+                      <ul className="text-blue-300 text-xs space-y-1 ml-4 list-disc">
+                        <li>
+                          Ensure Chrome notifications are enabled in system
+                          settings
+                        </li>
+                        <li>Check if "Do Not Disturb" mode is disabled</li>
+                      </ul>
+                     
+                    </div>
+                  )}
+
+                {/* Success message when working */}
+                {browserPermission === "granted" && notificationsEnabled && (
+                  <div className="mt-4 p-3 bg-green-900/20 border border-green-800 rounded-lg">
+                    <p className="text-green-400 text-sm">
+                      ✅ Notifications are enabled! You'll receive notifications
+                      when new tweets contain "cricket" or "science".
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

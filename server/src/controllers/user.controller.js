@@ -390,22 +390,43 @@ const getUserProfile = async (req, res) => {
 
 const getNotification = async (req, res) => {
   try {
+    console.log("Notification update request:", req.body);
+
     const { notificationsEnabled } = req.body;
+
     if (typeof notificationsEnabled !== "boolean") {
+      console.log("Invalid notification value:", notificationsEnabled);
       return res.status(400).json({
         message: "notificationsEnabled must be boolean",
       });
     }
+
+    console.log(
+      "Updating user:",
+      req.user._id,
+      "with notifications:",
+      notificationsEnabled
+    );
+
     const user = await User.findByIdAndUpdate(
       req.user._id,
       { notificationsEnabled },
       { new: true }
-    ).select("notificationsEnabled");
+    ).select("notificationsEnabled name username");
+
+    console.log("Updated user:", user);
+
     return res.status(200).json({
+      message: "Notification settings updated successfully",
       notificationsEnabled: user.notificationsEnabled,
+      user: {
+        name: user.name,
+        username: user.username,
+        notificationsEnabled: user.notificationsEnabled,
+      },
     });
-  } catch (err) {
-    console.error("Server error in the notification: ", error);
+  } catch (error) {
+    console.error("Server error in notification update:", error);
     return res.status(500).json({
       message: error.message,
     });
@@ -420,8 +441,8 @@ const updatePhoneNumber = async (req, res) => {
     });
   }
   if (!req.user || !req.user._id) {
-    return res.status(401).json({ 
-      message: "Unauthorized access." 
+    return res.status(401).json({
+      message: "Unauthorized access.",
     });
   }
   const user = await User.findById(req.user._id);
